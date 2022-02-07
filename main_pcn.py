@@ -105,6 +105,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='PCN')
     parser.add_argument('--env', default='covid', type=str, help='covid')
+    parser.add_argument('--threshold', default=0.2, type=float, help='crowding distance threshold before penalty')
     parser.add_argument('--model', default=None, type=str, help='load model')
     args = parser.parse_args()
 
@@ -121,7 +122,7 @@ if __name__ == '__main__':
         max_return = np.array([-8000, 0])/scale
 
         model = CovidModel(nA, scaling_factor).to(device)
-        lr, total_steps, batch_size, n_model_updates, n_er_episodes, max_size = 1e-3, 2e6, 256, 50, 50, 200
+        lr, total_steps, batch_size, n_model_updates, n_er_episodes, max_size = 1e-3, 5e5, 256, 50, 200, 400
 
     env.nA = nA
 
@@ -141,5 +142,6 @@ if __name__ == '__main__':
         n_er_episodes=n_er_episodes,
         max_size=max_size,
         max_return=max_return,
+        threshold=args.threshold,
         ref_point=ref_point,
         logdir=logdir)

@@ -131,9 +131,9 @@ def run_episode(env, model, desired_return, desired_horizon, max_return):
         desired_horizon = np.float32(max(desired_horizon-1, 1.))
     return transitions
 
-def choose_commands(experience_replay, n_episodes):
+def choose_commands(experience_replay, n_episodes, threshold=0.2):
     # get best episodes, according to their crowding distance
-    episodes = nlargest(n_episodes, experience_replay)
+    episodes = nlargest(n_episodes, experience_replay ,threshold=threshold)
     returns, horizons = list(zip(*[(e[2][0].reward, len(e[2])) for e in episodes]))
     # keep only non-dominated returns
     nd_i = get_non_dominated(np.array(returns))
@@ -183,8 +183,8 @@ def update_model(model, opt, experience_replay, batch_size):
     return l, log_prob
 
 
-def eval(env, model, experience_replay, max_return, gamma=1., n=10):
-    episodes = nlargest(n, experience_replay)
+def eval(env, model, experience_replay, max_return, gamma=1., n=10, threshold=0.2):
+    episodes = nlargest(n, experience_replay, threshold=threshold)
     returns, horizons = list(zip(*[(e[2][0].reward, len(e[2])) for e in episodes]))
     returns = np.float32(returns); horizons = np.float32(horizons)
     e_returns = []
@@ -212,6 +212,7 @@ def train(env,
           max_return=250.,
           max_size=500,
           ref_point=np.array([0, 0]),
+          threshold=0.2,
           logdir='runs/'):
     step = 0
     total_episodes = n_er_episodes
@@ -279,7 +280,7 @@ def train(env,
             torch.save(model, f'{logger.logdir}/model_{n_checkpoints+1}.pt')
             n_checkpoints += 1
 
-            e_r, e_dr, e_d = eval(env, model, experience_replay, max_return, gamma=gamma)
+            e_r, e_dr, e_d = eval(env, model, experience_replay, max_return, gamma=gamma, threshold=threshold)
             s = 'desired return vs evaluated return\n'+33*'='+'\n'
             for i in range(len(e_r)):
                 s += f'{e_dr[i]}  \t  {e_r[i]}  \n'
