@@ -77,7 +77,7 @@ def nlargest(n, experience_replay, threshold=.2):
     duplicates = np.ones(len(l2), dtype=bool)
     duplicates[unique_i] = False
     l2[duplicates] -= 1e-5
-    l2[sma] *= 2
+    l2[sma] -= 1
 
     sorted_i = np.argsort(l2)
     largest = [experience_replay[i] for i in sorted_i[-n:]]
