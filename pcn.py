@@ -152,7 +152,7 @@ def choose_commands(experience_replay, n_episodes, threshold=0.2):
     desired_return = np.float32(desired_return)
     return desired_return, desired_horizon
 
-def update_model(model, opt, experience_replay, batch_size):
+def update_model(model, opt, experience_replay, batch_size, noise=0.):
     batch = []
     # randomly choose episodes from experience buffer
     s_i = np.random.choice(np.arange(len(experience_replay)), size=batch_size, replace=True)
@@ -167,8 +167,11 @@ def update_model(model, opt, experience_replay, batch_size):
         batch.append((s_t, a_t, r_t, h_t))
 
     obs, actions, desired_return, desired_horizon = zip(*batch)
+    # TODO TEST add noise to the desired return
+    desired_return = torch.tensor(desired_return).to(device)
+    desired_return = desired_return + noise*torch.normal(0, 1, size=desired_return.shape, device=desired_return.device)
     log_prob = model(torch.tensor(obs).to(device),
-                     torch.tensor(desired_return).to(device),
+                     desired_return,
                      torch.tensor(desired_horizon).unsqueeze(1).to(device))
 
     opt.zero_grad()
@@ -213,6 +216,7 @@ def train(env,
           max_size=500,
           ref_point=np.array([0, 0]),
           threshold=0.2,
+          noise=0.0,
           logdir='runs/'):
     step = 0
     total_episodes = n_er_episodes

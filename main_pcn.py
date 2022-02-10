@@ -101,6 +101,7 @@ class CovidModel2(nn.Module):
 
         self.scaling_factor = scaling_factor
         self.s_emb = nn.Sequential(
+            nn.Flatten(),
             nn.Linear(130, 64),
             nn.ReLU(),
             nn.Linear(64, 64),
@@ -148,6 +149,7 @@ if __name__ == '__main__':
     parser.add_argument('--er-size', default=400, type=int,
         help='max size (in episodes) of the ER buffer')
     parser.add_argument('--threshold', default=0.02, type=float, help='crowding distance threshold before penalty')
+    parser.add_argument('--noise', default=0.0, type=float, help='noise applied on target-return on batch-update')
     parser.add_argument('--model', default='conv1d', type=str, help='conv1d, dense')
     args = parser.parse_args()
     print(args)
@@ -191,4 +193,5 @@ if __name__ == '__main__':
         max_return=max_return,
         threshold=args.threshold,
         ref_point=ref_point,
+        noise=args.noise,
         logdir=logdir)
