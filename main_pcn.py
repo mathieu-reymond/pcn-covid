@@ -94,6 +94,36 @@ class CovidModel(nn.Module):
         return log_prob
 
 
+class CovidModel2(nn.Module):
+
+    def __init__(self, nA, scaling_factor, n_hidden=64):
+        super(CovidModel2, self).__init__()
+
+        self.scaling_factor = scaling_factor
+        self.s_emb = nn.Sequential(
+            nn.Linear(130, 64),
+            nn.ReLU(),
+            nn.Linear(64, 64),
+            nn.Sigmoid()
+        )
+        self.c_emb = nn.Sequential(nn.Linear(3, 64),
+                                   nn.Sigmoid())
+        self.fc = nn.Sequential(nn.Linear(64, 64),
+                                nn.ReLU(),
+                                nn.Linear(64, nA),
+                                nn.LogSoftmax(1))
+
+    def forward(self, state, desired_return, desired_horizon):
+        c = torch.cat((desired_return, desired_horizon), dim=-1)
+        # commands are scaled by a fixed factor
+        c = c*self.scaling_factor
+        s = self.s_emb(state.float())
+        c = self.c_emb(c)
+        # element-wise multiplication of state-embedding and command
+        log_prob = self.fc(s*c)
+        return log_prob
+
+
 if __name__ == '__main__':
     import torch
     import argparse
@@ -104,43 +134,60 @@ if __name__ == '__main__':
     import gym_covid
 
     parser = argparse.ArgumentParser(description='PCN')
-    parser.add_argument('--env', default='covid', type=str, help='covid')
-    parser.add_argument('--threshold', default=0.2, type=float, help='crowding distance threshold before penalty')
-    parser.add_argument('--model', default=None, type=str, help='load model')
+    parser.add_argument('--env', default='ode', type=str, help='ode or binomial')
+    parser.add_argument('--lr', default=1e-3, type=float, help='learning rate')
+    parser.add_argument('--steps', default=3e5, type=float, help='total timesteps')
+    parser.add_argument('--batch', default=256, type=int, help='batch size')
+    parser.add_argument('--model-updates', default=50, type=int,
+        help='number of times the model is updated at every training iteration')
+    parser.add_argument('--top-episodes', default=200, type=int,
+        help='top-n episodes used to compute target-return and horizon. \
+              Initially fill ER with n random episodes')
+    parser.add_argument('--n-episodes', default=10, type=int,
+        help='number of episodes to run between each training iteration')
+    parser.add_argument('--er-size', default=400, type=int,
+        help='max size (in episodes) of the ER buffer')
+    parser.add_argument('--threshold', default=0.02, type=float, help='crowding distance threshold before penalty')
+    parser.add_argument('--model', default='conv1d', type=str, help='conv1d, dense')
     args = parser.parse_args()
+    print(args)
 
     device = 'cpu'
 
-    if args.env == 'covid':
-        scale = np.array([10000, 100.])
-        env = gym.make('BECovidWithLockdownODEDiscrete-v0')
-        env = TodayWrapper(env)
-        env = ScaleRewardEnv(env, scale=scale)
-        nA = env.action_space.n
-        ref_point = np.array([-50000, -2000.0])/scale
-        scaling_factor = torch.tensor([[1, 1, 0.1]]).to(device)
-        max_return = np.array([-8000, 0])/scale
-
-        model = CovidModel(nA, scaling_factor).to(device)
-        lr, total_steps, batch_size, n_model_updates, n_er_episodes, max_size = 1e-3, 5e5, 256, 50, 200, 400
+    env_type = 'ODE' if args.env == 'ode' else 'Binomial'
+    scale = np.array([10000, 100.])
+    env = gym.make(f'BECovidWithLockdown{env_type}Discrete-v0')
+    env = TodayWrapper(env)
+    env = ScaleRewardEnv(env, scale=scale)
+    nA = env.action_space.n
+    ref_point = np.array([-50000, -2000.0])/scale
+    scaling_factor = torch.tensor([[1, 1, 0.1]]).to(device)
+    max_return = np.array([-8000, 0])/scale
 
     env.nA = nA
+    
+    models = {
+        'conv1d': CovidModel,
+        'dense': CovidModel2
+    }
+    model = models[args.model](nA, scaling_factor).to(device)
+    # if args.model is not None:
+    #     model = torch.load(args.model, map_location=device).to(device)
+    #     model.scaling_factor = model.scaling_factor.to(device)
 
-    if args.model is not None:
-        model = torch.load(args.model, map_location=device).to(device)
-        model.scaling_factor = model.scaling_factor.to(device)
-
-    logdir = f'{os.getenv("LOGDIR", "/tmp")}/pcn/pcn/{args.env}/lr_{lr}/totalsteps_{total_steps}/batch_size_{batch_size}/n_model_updates_{n_model_updates}/n_er_episodes_{n_er_episodes}/max_size_{max_size}/'
+    logdir = f'{os.getenv("LOGDIR", "/tmp")}/pcn/pcn/'
+    logdir += '/'.join([f'{k}_{v}' for k, v in vars(args).items()]) + '/'
     logdir += datetime.now().strftime('%Y-%m-%d_%H-%M-%S_') + str(uuid.uuid4())[:4] + '/'
 
     train(env,
         model,
-        learning_rate=lr,
-        batch_size=batch_size,
-        total_steps=total_steps,
-        n_model_updates=n_model_updates,
-        n_er_episodes=n_er_episodes,
-        max_size=max_size,
+        learning_rate=args.lr,
+        batch_size=args.batch,
+        total_steps=args.steps,
+        n_model_updates=args.model_updates,
+        n_er_episodes=args.top_episodes,
+        n_step_episodes=args.n_episodes,
+        max_size=args.er_size,
         max_return=max_return,
         threshold=args.threshold,
         ref_point=ref_point,
