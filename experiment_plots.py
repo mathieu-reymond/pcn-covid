@@ -32,7 +32,8 @@ def udrl_runs(logdir):
                     'walkroom7':np.array([-10.0]*7),
                     'walkroom8':np.array([-10.0]*8),
                     'walkroom9':np.array([-10.0]*9),
-                    'covid':np.array([-50000, -2000.0])/np.array([10000, 100.])
+                    'ode':np.array([-50000, -2000.0])/np.array([10000, 100.]),
+                    'binomial':np.array([-50000, -2000.0])/np.array([10000, 100.])
                 }
                 for rp in ref_points.keys():
                     if rp in logdir:

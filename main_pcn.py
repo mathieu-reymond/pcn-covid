@@ -6,6 +6,16 @@ import cv2
 import numpy as np
 
 
+class MultiDiscreteAction(gym.ActionWrapper):
+    def __init__(self, env, action_map):
+        super(MultiDiscreteAction, self).__init__(env)
+        self.action_map = action_map
+        self.action_space = gym.spaces.MultiDiscrete([len(am) for am in action_map])
+
+    def action(self, action):
+        return np.array([self.action_map[i][action[i]] for i in range(len(self.action_map))])
+
+
 class ScaleRewardEnv(gym.RewardWrapper):
     def __init__(self, env, min_=0., scale=1.):
         gym.RewardWrapper.__init__(self, env)
@@ -80,8 +90,7 @@ class CovidModel(nn.Module):
                                    nn.Sigmoid())
         self.fc = nn.Sequential(nn.Linear(64, 64),
                                 nn.ReLU(),
-                                nn.Linear(64, nA),
-                                nn.LogSoftmax(1))
+                                nn.Linear(64, nA))
 
     def forward(self, state, desired_return, desired_horizon):
         c = torch.cat((desired_return, desired_horizon), dim=-1)
@@ -111,8 +120,7 @@ class CovidModel2(nn.Module):
                                    nn.Sigmoid())
         self.fc = nn.Sequential(nn.Linear(64, 64),
                                 nn.ReLU(),
-                                nn.Linear(64, nA),
-                                nn.LogSoftmax(1))
+                                nn.Linear(64, nA))
 
     def forward(self, state, desired_return, desired_horizon):
         c = torch.cat((desired_return, desired_horizon), dim=-1)
@@ -123,6 +131,36 @@ class CovidModel2(nn.Module):
         # element-wise multiplication of state-embedding and command
         log_prob = self.fc(s*c)
         return log_prob
+
+
+class DiscreteHead(nn.Module):
+    def __init__(self, base):
+        super(DiscreteHead, self).__init__()
+        self.base = base
+    def forward(self, state, desired_return, desired_horizon):
+        x = self.base(state, desired_return, desired_horizon)
+        x = F.log_softmax(x, 1)
+        return x
+
+
+class MultiDiscreteHead(nn.Module):
+    def __init__(self, base):
+        super(MultiDiscreteHead, self).__init__()
+        self.base = base
+    def forward(self, state, desired_return, desired_horizon):
+        x = self.base(state, desired_return, desired_horizon)
+        b, o = x.shape
+        # hardcoded
+        x = x.reshape(b, 3, 3)
+        x = F.log_softmax(x, 2)
+        return x
+
+
+def multidiscrete_env(env):
+    # the discrete actions:
+    a = [[0.0, 0.3, 0.6],[0, 0.5, 1],[0.3, 0.6, 0.9]]
+    env = MultiDiscreteAction(env, a)
+    return env
 
 
 if __name__ == '__main__':
@@ -136,6 +174,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='PCN')
     parser.add_argument('--env', default='ode', type=str, help='ode or binomial')
+    parser.add_argument('--action', default='discrete', type=str, help='discrete, multidiscrete or continuous')
     parser.add_argument('--lr', default=1e-3, type=float, help='learning rate')
     parser.add_argument('--steps', default=3e5, type=float, help='total timesteps')
     parser.add_argument('--batch', default=256, type=int, help='batch size')
@@ -158,10 +197,16 @@ if __name__ == '__main__':
 
     env_type = 'ODE' if args.env == 'ode' else 'Binomial'
     scale = np.array([10000, 100.])
-    env = gym.make(f'BECovidWithLockdown{env_type}Discrete-v0')
+    if args.action == 'discrete':
+        env = gym.make(f'BECovidWithLockdown{env_type}Discrete-v0')
+        nA = env.action_space.n
+    else:
+        env = gym.make(f'BECovidWithLockdown{env_type}Continuous-v0')
+        if args.action == 'multidiscrete':
+            env = multidiscrete_env(env)
+            nA = env.action_space.nvec.sum()
     env = TodayWrapper(env)
     env = ScaleRewardEnv(env, scale=scale)
-    nA = env.action_space.n
     ref_point = np.array([-50000, -2000.0])/scale
     scaling_factor = torch.tensor([[1, 1, 0.1]]).to(device)
     max_return = np.array([-8000, 0])/scale
@@ -173,6 +218,11 @@ if __name__ == '__main__':
         'dense': CovidModel2
     }
     model = models[args.model](nA, scaling_factor).to(device)
+
+    if args.action == 'discrete':
+        model = DiscreteHead(model)
+    elif args.action == 'multidiscrete':
+        model = MultiDiscreteHead(model)
     # if args.model is not None:
     #     model = torch.load(args.model, map_location=device).to(device)
     #     model.scaling_factor = model.scaling_factor.to(device)

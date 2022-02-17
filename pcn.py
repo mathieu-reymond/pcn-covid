@@ -104,7 +104,10 @@ def choose_action(model, obs, desired_return, desired_horizon):
                       torch.tensor([desired_return]).to(device),
                       torch.tensor([desired_horizon]).unsqueeze(1).to(device))
     log_probs = log_probs.detach().cpu().numpy()[0]
-    action = np.random.choice(np.arange(len(log_probs)), p=np.exp(log_probs))
+    if log_probs.ndim == 1:
+        action = np.random.choice(np.arange(len(log_probs)), p=np.exp(log_probs))
+    elif log_probs.ndim == 2:
+        action = np.array(list([np.random.choice(np.arange(len(lp)), p=np.exp(lp)) for lp in log_probs]))
     return action
 
 def run_episode(env, model, desired_return, desired_horizon, max_return):
@@ -176,9 +179,10 @@ def update_model(model, opt, experience_replay, batch_size, noise=0.):
 
     opt.zero_grad()
     # one-hot of action for CE loss
-    actions = F.one_hot(torch.tensor(actions).long().to(device), len(log_prob[0]))
+    actions = torch.tensor(actions).long().to(device)
+    actions = F.one_hot(actions, num_classes=log_prob.shape[-1])
     # cross-entropy loss
-    l = torch.sum(-actions*log_prob, -1)
+    l = torch.sum(-actions*log_prob, -1).sum(-1)
     l = l.mean()
     l.backward()
     opt.step()
@@ -230,7 +234,7 @@ def train(env,
         obs = env.reset()
         done = False
         while not done:
-            action = np.random.randint(0, env.nA)
+            action = env.action_space.sample()
             n_obs, reward, done, _ = env.step(action)
             transitions.append(Transition(obs, action, np.float32(reward).copy(), n_obs, done))
             obs = n_obs

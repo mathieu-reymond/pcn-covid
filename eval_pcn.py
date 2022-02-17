@@ -1,4 +1,4 @@
-from main_pcn import CovidModel, ScaleRewardEnv, TodayWrapper
+from main_pcn import CovidModel, CovidModel2, MultiDiscreteHead, DiscreteHead, ScaleRewardEnv, TodayWrapper, multidiscrete_env
 from pcn import get_non_dominated, Transition
 import torch
 import numpy as np
@@ -14,7 +14,7 @@ def choose_action(model, obs, desired_return, desired_horizon):
                       torch.tensor([desired_return]).to(device),
                       torch.tensor([desired_horizon]).unsqueeze(1).to(device))
     log_probs = log_probs.detach().cpu().numpy()[0]
-    return np.argmax(log_probs)
+    return np.argmax(log_probs, axis=-1)
     action = np.random.choice(np.arange(len(log_probs)), p=np.exp(log_probs))
     return action
 
@@ -28,7 +28,7 @@ def run_episode(env, model, desired_return, desired_horizon, max_return):
 
         transitions.append(Transition(
             observation=obs,
-            action=env.action_map[action],
+            action=env.action(action),
             reward=np.float32(reward).copy(),
             next_observation=n_obs,
             terminal=done
@@ -66,7 +66,6 @@ def plot_episode(transitions, alpha=1.):
     # deaths
     ax = axs[1]
     ax.plot(d_new, alpha=alpha, label='deaths', color='red')
-    # ax.set_xticks(ticks=np.arange(0, 18, 2), labels=[str(d.day)+'/'+str(d.month) for d in dates])
 
     # actions
     ax = axs[2]
@@ -74,29 +73,30 @@ def plot_episode(transitions, alpha=1.):
     ax.plot(actions[:,0], alpha=alpha, label='p_w', color='blue')
     ax.plot(actions[:,1], alpha=alpha, label='p_s', color='orange')
     ax.plot(actions[:,2], alpha=alpha, label='p_l', color='green')
-    # ax.set_xticks(ticks=np.arange(0, 18, 2), labels=[str(d.day)+'/'+str(d.month) for d in dates])
 
     axs[0].set_xlabel('days')
     axs[0].set_ylabel('hospitalizations')
     axs[1].set_ylabel('deaths')
     axs[2].set_ylabel('actions')
-    for ax in axs:
-        ax.legend()
+    # for ax in axs:
+    #     ax.legend()
 
 
-def eval_pcn(env, model, desired_return, desired_horizon, max_return, gamma=1.):
-    transitions = run_episode(env, model, desired_return, desired_horizon, max_return)
-    # compute return
-    for i in reversed(range(len(transitions)-1)):
-        transitions[i].reward += gamma * transitions[i+1].reward
-    
-    print(f'ran model with desired-return: {desired_return.flatten()}, got {transitions[i].reward.flatten()}')
-    print('action sequence: ')
-    for t in transitions:
-        print(f'- {t.action}')
-
+def eval_pcn(env, model, desired_return, desired_horizon, max_return, gamma=1., n=1):
     plt.subplots(3, 1, sharex=True)
-    plot_episode(transitions)
+    alpha = 1 if n == 1 else 0.2
+    for _ in range(n):
+        transitions = run_episode(env, model, desired_return, desired_horizon, max_return)
+        # compute return
+        for i in reversed(range(len(transitions)-1)):
+            transitions[i].reward += gamma * transitions[i+1].reward
+        
+        print(f'ran model with desired-return: {desired_return.flatten()}, got {transitions[i].reward.flatten()}')
+        print('action sequence: ')
+        for t in transitions:
+            print(f'- {t.action}')
+        plot_episode(transitions, alpha)
+
     plt.show()
 
 
@@ -110,7 +110,9 @@ if __name__ == '__main__':
     import h5py
 
     parser = argparse.ArgumentParser(description='PCN')
+    parser.add_argument('env', type=str, help='ode or binomial')
     parser.add_argument('model', type=str, help='load model')
+    parser.add_argument('--n', type=int, default=1, help='evaluation runs')
     args = parser.parse_args()
     model_dir = pathlib.Path(args.model)
 
@@ -126,14 +128,24 @@ if __name__ == '__main__':
         pf = np.argsort(pareto_front, axis=0)
         pareto_front = pareto_front[pf[:,0]]
         
+    env_type = 'ODE' if args.env == 'ode' else 'Binomial'
     scale = np.array([10000, 100.])
-    env = gym.make('BECovidWithLockdownODEDiscrete-v0')
+    # hacky, d for discrete, m for multidiscrete, c for continuous
+    action = str(model_dir)[str(model_dir).find('action')+7]
+    if action == 'd':
+        env = gym.make(f'BECovidWithLockdown{env_type}Discrete-v0')
+        nA = env.action_space.n
+    else:
+        env = gym.make(f'BECovidWithLockdown{env_type}Continuous-v0')
+        if action == 'm':
+            env = multidiscrete_env(env)
+            nA = env.action_space.nvec.sum()
     env = TodayWrapper(env)
     env = ScaleRewardEnv(env, scale=scale)
-    nA = env.action_space.n
     ref_point = np.array([-50000, -2000.0])/scale
     scaling_factor = torch.tensor([[1, 1, 0.1]])
     max_return = np.array([-8000, 0])/scale
+    print(env)
 
     inp = None
     while True:
@@ -146,4 +158,4 @@ if __name__ == '__main__':
         desired_return = pareto_front[inp]
         desired_horizon = 17
 
-        eval_pcn(env, model, desired_return, desired_horizon, max_return)
+        eval_pcn(env, model, desired_return, desired_horizon, max_return, n=args.n)
