@@ -1,5 +1,5 @@
 from main_pcn import CovidModel, CovidModel2, MultiDiscreteHead, DiscreteHead, ScaleRewardEnv, TodayWrapper, multidiscrete_env
-from pcn import get_non_dominated, Transition
+from pcn import non_dominated, Transition
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
@@ -124,7 +124,7 @@ if __name__ == '__main__':
 
     with log:
         pareto_front = log['train/leaves/ndarray'][-1]
-        pareto_front = pareto_front[get_non_dominated(pareto_front)]
+        pareto_front = non_dominated(pareto_front)
         pf = np.argsort(pareto_front, axis=0)
         pareto_front = pareto_front[pf[:,0]]
         

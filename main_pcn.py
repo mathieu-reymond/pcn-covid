@@ -156,6 +156,16 @@ class MultiDiscreteHead(nn.Module):
         return x
 
 
+class ContinuousHead(nn.Module):
+    def __init__(self, base):
+        super(ContinuousHead, self).__init__()
+        self.base = base
+    def forward(self, state, desired_return, desired_horizon):
+        x = self.base(state, desired_return, desired_horizon)
+        x = F.tanh(x)
+        return x
+
+
 def multidiscrete_env(env):
     # the discrete actions:
     a = [[0.0, 0.3, 0.6],[0, 0.5, 1],[0.3, 0.6, 0.9]]
@@ -196,6 +206,7 @@ if __name__ == '__main__':
     device = 'cpu'
 
     env_type = 'ODE' if args.env == 'ode' else 'Binomial'
+    n_evaluations = 1 if env_type == 'ODE' else 10
     scale = np.array([10000, 100.])
     if args.action == 'discrete':
         env = gym.make(f'BECovidWithLockdown{env_type}Discrete-v0')
@@ -205,6 +216,9 @@ if __name__ == '__main__':
         if args.action == 'multidiscrete':
             env = multidiscrete_env(env)
             nA = env.action_space.nvec.sum()
+        # continuous
+        else:
+            nA = np.prod(env.action_space.shape)
     env = TodayWrapper(env)
     env = ScaleRewardEnv(env, scale=scale)
     ref_point = np.array([-50000, -2000.0])/scale
@@ -223,6 +237,8 @@ if __name__ == '__main__':
         model = DiscreteHead(model)
     elif args.action == 'multidiscrete':
         model = MultiDiscreteHead(model)
+    elif args.action == 'continuous':
+        model = ContinuousHead(model)
     # if args.model is not None:
     #     model = torch.load(args.model, map_location=device).to(device)
     #     model.scaling_factor = model.scaling_factor.to(device)
@@ -244,4 +260,5 @@ if __name__ == '__main__':
         threshold=args.threshold,
         ref_point=ref_point,
         noise=args.noise,
+        n_evaluations=n_evaluations,
         logdir=logdir)

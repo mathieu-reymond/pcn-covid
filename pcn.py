@@ -8,21 +8,71 @@ from pygmo import hypervolume
 from logger import Logger
 
 
-def crowding_distance(points):
-    # first normalize accross dimensions
-    points = (points-points.min(axis=0))/(points.ptp(axis=0)+1e-8)
-    # sort points per dimension
-    dim_sorted = np.argsort(points, axis=0)
-    point_sorted = np.take_along_axis(points, dim_sorted, axis=0)
-    # compute distances between lower and higher point
-    distances = np.abs(point_sorted[:-2] - point_sorted[2:])
-    # pad extrema's with 1, for each dimension
-    distances = np.pad(distances, ((1,), (0,)), constant_values=1)
-    # sum distances of each dimension of the same point
+def crowding_distance(points, ranks=None):
     crowding = np.zeros(points.shape)
-    crowding[dim_sorted, np.arange(points.shape[-1])] = distances
+    # compute crowding distance separately for each non-dominated rank
+    if ranks is None:
+        ranks = non_dominated_rank(points)
+    unique_ranks = np.unique(ranks)
+    for rank in unique_ranks:
+        current_i = ranks == rank
+        current = points[current_i]
+        if len(current) == 1:
+            crowding[current_i] = 1
+            continue
+        # first normalize accross dimensions
+        current = (current-current.min(axis=0))/(current.ptp(axis=0)+1e-8)
+        # sort points per dimension
+        dim_sorted = np.argsort(current, axis=0)
+        point_sorted = np.take_along_axis(current, dim_sorted, axis=0)
+        # compute distances between lower and higher point
+        distances = np.abs(point_sorted[:-2] - point_sorted[2:])
+        # pad extrema's with 1, for each dimension
+        distances = np.pad(distances, ((1,), (0,)), constant_values=1)
+        
+        current_crowding = np.zeros(current.shape)
+        current_crowding[dim_sorted, np.arange(points.shape[-1])] = distances
+        crowding[current_i] = current_crowding
+    # sum distances of each dimension of the same point
     crowding = np.sum(crowding, axis=-1)
+    # normalized by dividing by number of objectives
+    crowding = crowding/points.shape[-1]
     return crowding
+
+
+def non_dominated_rank(points):
+    ranks = np.zeros(len(points), dtype=np.float32)
+    current_rank = 0
+    # get unique points to determine their non-dominated rank
+    unique_points, indexes = np.unique(points, return_inverse=True, axis=0)
+    # as long as we haven't processed all points
+    while not np.all(unique_points==-np.inf):
+        _, nd_i = non_dominated(unique_points, return_indexes=True)
+        # use indexes to compute inverse of unique_points, but use nd_i instead
+        ranks[nd_i[indexes]] = current_rank
+        # replace ranked points with -inf, so that they won't be non-dominated again
+        unique_points[nd_i] = -np.inf
+        current_rank += 1
+    return ranks
+
+
+def epsilon_metric(coverage_set, pareto_front):
+    # normalize pareto front and coverage set for each 
+    min_, ptp = pareto_front.min(axis=0),pareto_front.ptp(axis=0)
+    pareto_front = (pareto_front-min_)/(ptp+1e-8)
+    coverage_set = (coverage_set-min_)/(ptp+1e-8)
+    # for every point in the pareto front, find the closest point in the coverage set
+    # do this for every dimension separately
+    # duplicate every point of the PF to compare with every point of the CS
+    pf_duplicate = np.tile(np.expand_dims(pareto_front, 1), (1, len(coverage_set), 1))
+    # distance for each dimension, for each point
+    epsilon = np.abs(pf_duplicate-coverage_set)
+    # for each point, take the maximum epsilon with pareto front
+    epsilon = epsilon.max(-1)
+    # closest point (in terms of epsilon) with PF
+    epsilon = epsilon.min(-1)
+
+    return epsilon
 
 
 @dataclass
@@ -35,7 +85,7 @@ class Transition(object):
 
 device = 'cpu'
 
-def get_non_dominated(solutions):
+def non_dominated(solutions, return_indexes=False):
     is_efficient = np.ones(solutions.shape[0], dtype=bool)
     for i, c in enumerate(solutions):
         if is_efficient[i]:
@@ -43,7 +93,11 @@ def get_non_dominated(solutions):
             is_efficient[is_efficient] = np.any(solutions[is_efficient] > c, axis=1)
             # keep this solution as non-dominated
             is_efficient[i] = 1
-    return is_efficient
+    if return_indexes:
+        return solutions[is_efficient], is_efficient
+    else:
+        return solutions[is_efficient]
+
 
 def compute_hypervolume(q_set, ref):
     nA = len(q_set)
@@ -63,7 +117,7 @@ def nlargest(n, experience_replay, threshold=.2):
     distances = crowding_distance(returns)
     sma = np.argwhere(distances <= threshold).flatten()
 
-    nd_i = get_non_dominated(returns)
+    nd, nd_i = non_dominated(returns, return_indexes=True)
     nd = returns[nd_i]
     # we will compute distance of each point with each non-dominated point,
     # duplicate each point with number of nd to compute respective distance
@@ -99,23 +153,26 @@ def add_episode(transitions, experience_replay, gamma=1., max_size=100, step=0):
     else:
         heapq.heappush(experience_replay, (1, step, transitions))
 
-def choose_action(model, obs, desired_return, desired_horizon):
+def choose_action(model, obs, desired_return, desired_horizon, eval=False):
     log_probs = model(torch.tensor([obs]).to(device),
                       torch.tensor([desired_return]).to(device),
                       torch.tensor([desired_horizon]).unsqueeze(1).to(device))
     log_probs = log_probs.detach().cpu().numpy()[0]
+    # if evaluating: act greedily
+    if eval:
+        return np.argmax(log_probs, axis=-1)
     if log_probs.ndim == 1:
         action = np.random.choice(np.arange(len(log_probs)), p=np.exp(log_probs))
     elif log_probs.ndim == 2:
         action = np.array(list([np.random.choice(np.arange(len(lp)), p=np.exp(lp)) for lp in log_probs]))
     return action
 
-def run_episode(env, model, desired_return, desired_horizon, max_return):
+def run_episode(env, model, desired_return, desired_horizon, max_return, eval=False):
     transitions = []
     obs = env.reset()
     done = False
     while not done:
-        action = choose_action(model, obs, desired_return, desired_horizon)
+        action = choose_action(model, obs, desired_return, desired_horizon, eval=eval)
         n_obs, reward, done, _ = env.step(action)
 
         transitions.append(Transition(
@@ -139,8 +196,7 @@ def choose_commands(experience_replay, n_episodes, threshold=0.2):
     episodes = nlargest(n_episodes, experience_replay ,threshold=threshold)
     returns, horizons = list(zip(*[(e[2][0].reward, len(e[2])) for e in episodes]))
     # keep only non-dominated returns
-    nd_i = get_non_dominated(np.array(returns))
-    returns = np.array(returns)[nd_i]
+    returns, nd_i = non_dominated(np.array(returns), return_indexes=True)
     horizons = np.array(horizons)[nd_i]
     # pick random return from random best episode
     r_i = np.random.randint(0, len(returns))
@@ -190,21 +246,17 @@ def update_model(model, opt, experience_replay, batch_size, noise=0.):
     return l, log_prob
 
 
-def eval(env, model, experience_replay, max_return, gamma=1., n=10, threshold=0.2):
-    episodes = nlargest(n, experience_replay, threshold=threshold)
-    returns, horizons = list(zip(*[(e[2][0].reward, len(e[2])) for e in episodes]))
-    returns = np.float32(returns); horizons = np.float32(horizons)
-    e_returns = []
-    for i in range(n):
-        transitions = run_episode(env, model, returns[i], np.float32(horizons[i]-2), max_return)
-        # compute return
-        for i in reversed(range(len(transitions)-1)):
-            transitions[i].reward += gamma * transitions[i+1].reward
-        e_returns.append(transitions[0].reward)
+def eval(env, model, coverage_set, horizons, max_return, gamma=1., n=10):
+    e_returns = np.empty((coverage_set.shape[0], n, coverage_set.shape[-1]))
+    for e_i, target_return, horizon in zip(np.arange(len(coverage_set)), coverage_set, horizons):
+        for i in range(n):
+            transitions = run_episode(env, model, target_return, np.float32(horizon), max_return, eval=True)
+            # compute return
+            for i in reversed(range(len(transitions)-1)):
+                transitions[i].reward += gamma * transitions[i+1].reward
+            e_returns[e_i, i] = transitions[0].reward
 
-    e_returns = np.array(e_returns)
-    distances = np.linalg.norm(np.array(returns)-e_returns, axis=-1)
-    return e_returns, np.array(returns), distances
+    return e_returns
 
 
 def train(env, 
@@ -221,6 +273,7 @@ def train(env,
           ref_point=np.array([0, 0]),
           threshold=0.2,
           noise=0.0,
+          n_evaluations=10,
           logdir='runs/'):
     step = 0
     total_episodes = n_er_episodes
@@ -254,11 +307,13 @@ def train(env,
         desired_return, desired_horizon = choose_commands(experience_replay, n_er_episodes)
 
          # get all leaves, contain biggest elements, experience_replay got heapified in choose_commands
-        leaves = np.array([e[2][0].reward for e in experience_replay[len(experience_replay)//2:]])
+        leaves = np.array([(len(e[2]), e[2][0].reward) for e in experience_replay[len(experience_replay)//2:]])
+        e_lengths, e_returns = zip(*leaves)
+        e_lengths, e_returns = np.array(e_lengths), np.array(e_returns)
         try:
             if len(experience_replay) == max_size:
-                logger.put('train/leaves', leaves, step, f'{leaves.shape[-1]}d')
-            hv = hypervolume(leaves*-1)
+                logger.put('train/leaves', e_returns, step, f'{e_returns.shape[-1]}d')
+            hv = hypervolume(e_returns*-1)
             hv_est = hv.compute(ref_point*-1)
             logger.put('train/hypervolume', hv_est, step, 'scalar')
         except ValueError:
@@ -288,11 +343,19 @@ def train(env,
             torch.save(model, f'{logger.logdir}/model_{n_checkpoints+1}.pt')
             n_checkpoints += 1
 
-            e_r, e_dr, e_d = eval(env, model, experience_replay, max_return, gamma=gamma, threshold=threshold)
-            s = 'desired return vs evaluated return\n'+33*'='+'\n'
-            for i in range(len(e_r)):
-                s += f'{e_dr[i]}  \t  {e_r[i]}  \n'
-            logger.put('eval/return/desired', e_dr, step, f'{len(desired_return)}d')
-            logger.put('eval/return/value', e_r, step, f'{len(desired_return)}d')
-            for o in range(len(desired_return)):
-                logger.put(f'eval/return/{o}/distance', e_d[o], step, 'scalar')
+            # current coverage set
+            e_returns, e_i = non_dominated(e_returns, return_indexes=True)
+            e_lengths = e_lengths[e_i]
+
+            e_r = eval(env, model, e_returns, e_lengths, max_return, gamma=gamma, n=n_evaluations)
+            # save raw evaluation returns
+            logger.put('eval/returns', e_r, step, f'{len(e_r)}d')
+            # compute e-metric
+            epsilon = epsilon_metric(e_r.mean(axis=1), e_returns)
+            logger.put('eval/epsilon/max', epsilon.max(), step, 'scalar')
+            logger.put('eval/epsilon/mean', epsilon.mean(), step, 'scalar')
+            print('='*10, ' evaluation ', '='*10)
+            for d, r in zip(e_returns, e_r):
+                print('desired: ', d, '\t', 'return: ', r.mean(0))
+            print(f'epsilon max/mean: {epsilon.max():.3f} \t {epsilon.mean():.3f}')
+            print('='*22)
