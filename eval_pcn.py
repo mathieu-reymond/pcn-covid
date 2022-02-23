@@ -1,5 +1,5 @@
-from main_pcn import CovidModel, CovidModel2, MultiDiscreteHead, DiscreteHead, ScaleRewardEnv, TodayWrapper, multidiscrete_env
-from pcn import non_dominated, Transition
+from main_pcn import CovidModel, CovidModel2, MultiDiscreteHead, DiscreteHead, ContinuousHead, ScaleRewardEnv, TodayWrapper, multidiscrete_env
+from pcn import non_dominated, Transition, choose_action
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
@@ -9,21 +9,12 @@ import datetime
 device = 'cpu'
 
 
-def choose_action(model, obs, desired_return, desired_horizon):
-    log_probs = model(torch.tensor([obs]).to(device),
-                      torch.tensor([desired_return]).to(device),
-                      torch.tensor([desired_horizon]).unsqueeze(1).to(device))
-    log_probs = log_probs.detach().cpu().numpy()[0]
-    return np.argmax(log_probs, axis=-1)
-    action = np.random.choice(np.arange(len(log_probs)), p=np.exp(log_probs))
-    return action
-
 def run_episode(env, model, desired_return, desired_horizon, max_return):
     transitions = []
     obs = env.reset()
     done = False
     while not done:
-        action = choose_action(model, obs, desired_return, desired_horizon)
+        action = choose_action(model, obs, desired_return, desired_horizon, eval=True)
         n_obs, reward, done, _ = env.step(action)
 
         transitions.append(Transition(
@@ -140,6 +131,9 @@ if __name__ == '__main__':
         if action == 'm':
             env = multidiscrete_env(env)
             nA = env.action_space.nvec.sum()
+        else:
+            nA = np.prod(env.action_space.shape)
+            env.action = lambda x: x
     env = TodayWrapper(env)
     env = ScaleRewardEnv(env, scale=scale)
     ref_point = np.array([-50000, -2000.0])/scale

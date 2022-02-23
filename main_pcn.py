@@ -162,7 +162,9 @@ class ContinuousHead(nn.Module):
         self.base = base
     def forward(self, state, desired_return, desired_horizon):
         x = self.base(state, desired_return, desired_horizon)
-        x = F.tanh(x)
+        x = torch.tanh(x)
+        # bound in [0, 1]
+        x = (x+1)/2
         return x
 
 

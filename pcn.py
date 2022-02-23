@@ -158,13 +158,21 @@ def choose_action(model, obs, desired_return, desired_horizon, eval=False):
                       torch.tensor([desired_return]).to(device),
                       torch.tensor([desired_horizon]).unsqueeze(1).to(device))
     log_probs = log_probs.detach().cpu().numpy()[0]
-    # if evaluating: act greedily
-    if eval:
-        return np.argmax(log_probs, axis=-1)
-    if log_probs.ndim == 1:
-        action = np.random.choice(np.arange(len(log_probs)), p=np.exp(log_probs))
-    elif log_probs.ndim == 2:
-        action = np.array(list([np.random.choice(np.arange(len(lp)), p=np.exp(lp)) for lp in log_probs]))
+    # check if actions are continuous
+    # TODO hacky
+    if model.__class__.__name__ == 'ContinuousHead':
+        action = log_probs
+        # add some noise for randomness
+        if not eval:
+            action = action + np.random.normal(0, 0.1, size=action.shape).astype(np.float32)
+    else:
+        # if evaluating: act greedily
+        if eval:
+            return np.argmax(log_probs, axis=-1)
+        if log_probs.ndim == 1:
+            action = np.random.choice(np.arange(len(log_probs)), p=np.exp(log_probs))
+        elif log_probs.ndim == 2:
+            action = np.array(list([np.random.choice(np.arange(len(lp)), p=np.exp(lp)) for lp in log_probs]))
     return action
 
 def run_episode(env, model, desired_return, desired_horizon, max_return, eval=False):
@@ -234,11 +242,16 @@ def update_model(model, opt, experience_replay, batch_size, noise=0.):
                      torch.tensor(desired_horizon).unsqueeze(1).to(device))
 
     opt.zero_grad()
-    # one-hot of action for CE loss
-    actions = torch.tensor(actions).long().to(device)
-    actions = F.one_hot(actions, num_classes=log_prob.shape[-1])
-    # cross-entropy loss
-    l = torch.sum(-actions*log_prob, -1).sum(-1)
+    # check if actions are continuous
+    # TODO hacky
+    if model.__class__.__name__ == 'ContinuousHead':
+        l = F.mse_loss(log_prob, torch.tensor(actions))
+    else:
+        # one-hot of action for CE loss
+        actions = torch.tensor(actions).long().to(device)
+        actions = F.one_hot(actions, num_classes=log_prob.shape[-1])
+        # cross-entropy loss
+        l = torch.sum(-actions*log_prob, -1).sum(-1)
     l = l.mean()
     l.backward()
     opt.step()
@@ -339,7 +352,7 @@ def train(env,
             logger.put(f'train/return/{o}/desired', np.mean(np.array(returns)[:, o]), step, 'scalar')
             logger.put(f'train/return/{o}/distance', np.linalg.norm(np.mean(np.array(returns)[:, o])-desired_return[o]), step, 'scalar')
         print(f'step {step} \t return {np.mean(returns, axis=0)}, ({np.std(returns, axis=0)}) \t loss {np.mean(loss):.3E}')
-        if step >= (n_checkpoints+1)*total_steps/100:
+        if step >= (n_checkpoints+1)*total_steps/10:
             torch.save(model, f'{logger.logdir}/model_{n_checkpoints+1}.pt')
             n_checkpoints += 1
 
@@ -349,7 +362,7 @@ def train(env,
 
             e_r = eval(env, model, e_returns, e_lengths, max_return, gamma=gamma, n=n_evaluations)
             # save raw evaluation returns
-            logger.put('eval/returns', e_r, step, f'{len(e_r)}d')
+            logger.put(f'eval/returns/{n_checkpoints}', e_r, 0, f'{len(e_r)}d')
             # compute e-metric
             epsilon = epsilon_metric(e_r.mean(axis=1), e_returns)
             logger.put('eval/epsilon/max', epsilon.max(), step, 'scalar')
