@@ -29,13 +29,15 @@ class ScaleRewardEnv(gym.RewardWrapper):
 class TodayWrapper(gym.Wrapper):
     def reset(self):
         s = super(TodayWrapper, self).reset()
-        return s[-1].T
+        ss, se = s
+        return (ss[-1].T, se[-1])
     # step function of covid env returns simulation results of every day of timestep
     # only keep current day
     # also discard first reward
     def step(self, action):
         s, r, d, i = super(TodayWrapper, self).step(action)
-        return s[-1].T, r[1:], d, i
+        ss, se = s
+        return (ss[-1].T, se[-1]), r[1:], d, i
 
 
 class HistoryEnv(gym.Wrapper):
@@ -77,7 +79,7 @@ class CovidModel(nn.Module):
         super(CovidModel, self).__init__()
 
         self.scaling_factor = scaling_factor
-        self.s_emb = nn.Sequential(
+        self.ss_emb = nn.Sequential(
             nn.Conv1d(10, 20, kernel_size=3, stride=2, groups=5),
             nn.ReLU(),
             nn.Conv1d(20, 20, kernel_size=2, stride=1, groups=10),
@@ -86,33 +88,11 @@ class CovidModel(nn.Module):
             nn.Linear(100, 64),
             nn.Sigmoid()
         )
-        self.c_emb = nn.Sequential(nn.Linear(3, 64),
-                                   nn.Sigmoid())
-        self.fc = nn.Sequential(nn.Linear(64, 64),
-                                nn.ReLU(),
-                                nn.Linear(64, nA))
-
-    def forward(self, state, desired_return, desired_horizon):
-        c = torch.cat((desired_return, desired_horizon), dim=-1)
-        # commands are scaled by a fixed factor
-        c = c*self.scaling_factor
-        s = self.s_emb(state.float())
-        c = self.c_emb(c)
-        # element-wise multiplication of state-embedding and command
-        log_prob = self.fc(s*c)
-        return log_prob
-
-
-class CovidModel2(nn.Module):
-
-    def __init__(self, nA, scaling_factor, n_hidden=64):
-        super(CovidModel2, self).__init__()
-
-        self.scaling_factor = scaling_factor
+        self.se_emb = nn.Sequential(
+            nn.Linear(1, 64),
+            nn.Sigmoid()
+        )
         self.s_emb = nn.Sequential(
-            nn.Flatten(),
-            nn.Linear(130, 64),
-            nn.ReLU(),
             nn.Linear(64, 64),
             nn.Sigmoid()
         )
@@ -126,7 +106,47 @@ class CovidModel2(nn.Module):
         c = torch.cat((desired_return, desired_horizon), dim=-1)
         # commands are scaled by a fixed factor
         c = c*self.scaling_factor
-        s = self.s_emb(state.float())
+        ss, se = state
+        s = self.ss_emb(ss.float())+self.se_emb(se.float())
+        s = self.s_emb(s)
+        c = self.c_emb(c)
+        # element-wise multiplication of state-embedding and command
+        log_prob = self.fc(s*c)
+        return log_prob
+
+
+class CovidModel2(nn.Module):
+
+    def __init__(self, nA, scaling_factor, n_hidden=64):
+        super(CovidModel2, self).__init__()
+
+        self.scaling_factor = scaling_factor
+        self.ss_emb = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(130, 64),
+            nn.Sigmoid()
+        )
+        self.se_emb = nn.Sequential(
+            nn.Linear(1, 64),
+            nn.Sigmoid()
+        )
+        self.s_emb = nn.Sequential(
+            nn.Linear(64, 64),
+            nn.Sigmoid()
+        )
+        self.c_emb = nn.Sequential(nn.Linear(3, 64),
+                                   nn.Sigmoid())
+        self.fc = nn.Sequential(nn.Linear(64, 64),
+                                nn.ReLU(),
+                                nn.Linear(64, nA))
+
+    def forward(self, state, desired_return, desired_horizon):
+        c = torch.cat((desired_return, desired_horizon), dim=-1)
+        # commands are scaled by a fixed factor
+        c = c*self.scaling_factor
+        ss, se = state
+        s = self.ss_emb(ss.float())+self.se_emb(se.float())
+        s = self.s_emb(s)
         c = self.c_emb(c)
         # element-wise multiplication of state-embedding and command
         log_prob = self.fc(s*c)

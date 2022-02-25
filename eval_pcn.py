@@ -18,7 +18,7 @@ def run_episode(env, model, desired_return, desired_horizon, max_return):
         n_obs, reward, done, _ = env.step(action)
 
         transitions.append(Transition(
-            observation=obs,
+            observation=obs[0],
             action=env.action(action),
             reward=np.float32(reward).copy(),
             next_observation=n_obs,

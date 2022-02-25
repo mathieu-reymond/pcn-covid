@@ -154,7 +154,9 @@ def add_episode(transitions, experience_replay, gamma=1., max_size=100, step=0):
         heapq.heappush(experience_replay, (1, step, transitions))
 
 def choose_action(model, obs, desired_return, desired_horizon, eval=False):
-    log_probs = model(torch.tensor([obs]).to(device),
+    # if observation is not a simple np.array, convert individual arrays to tensors
+    obs = [torch.tensor([o]).to(device) for o in obs] if type(obs) == tuple else torch.tensor([obs]).to(device)
+    log_probs = model(obs,
                       torch.tensor([desired_return]).to(device),
                       torch.tensor([desired_horizon]).unsqueeze(1).to(device))
     log_probs = log_probs.detach().cpu().numpy()[0]
@@ -234,10 +236,13 @@ def update_model(model, opt, experience_replay, batch_size, noise=0.):
         batch.append((s_t, a_t, r_t, h_t))
 
     obs, actions, desired_return, desired_horizon = zip(*batch)
+    # since each state is a tuple with (compartment, events), reorder obs
+    obs = zip(*obs)
+    obs = tuple([torch.tensor(o).to(device) for o in obs])
     # TODO TEST add noise to the desired return
     desired_return = torch.tensor(desired_return).to(device)
     desired_return = desired_return + noise*torch.normal(0, 1, size=desired_return.shape, device=desired_return.device)
-    log_prob = model(torch.tensor(obs).to(device),
+    log_prob = model(obs,
                      desired_return,
                      torch.tensor(desired_horizon).unsqueeze(1).to(device))
 
