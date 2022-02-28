@@ -166,7 +166,7 @@ def choose_action(model, obs, desired_return, desired_horizon, eval=False):
         action = log_probs
         # add some noise for randomness
         if not eval:
-            action = action + np.random.normal(0, 0.1, size=action.shape).astype(np.float32)
+            action = np.clip(action + np.random.normal(0, 0.1, size=action.shape).astype(np.float32), 0, 1)
     else:
         # if evaluating: act greedily
         if eval:
@@ -267,12 +267,12 @@ def update_model(model, opt, experience_replay, batch_size, noise=0.):
 def eval(env, model, coverage_set, horizons, max_return, gamma=1., n=10):
     e_returns = np.empty((coverage_set.shape[0], n, coverage_set.shape[-1]))
     for e_i, target_return, horizon in zip(np.arange(len(coverage_set)), coverage_set, horizons):
-        for i in range(n):
+        for n_i in range(n):
             transitions = run_episode(env, model, target_return, np.float32(horizon), max_return, eval=True)
             # compute return
             for i in reversed(range(len(transitions)-1)):
                 transitions[i].reward += gamma * transitions[i+1].reward
-            e_returns[e_i, i] = transitions[0].reward
+            e_returns[e_i, n_i] = transitions[0].reward
 
     return e_returns
 
