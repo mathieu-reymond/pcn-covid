@@ -76,19 +76,20 @@ def plot_episode(transitions, alpha=1.):
 def eval_pcn(env, model, desired_return, desired_horizon, max_return, gamma=1., n=1):
     plt.subplots(3, 1, sharex=True)
     alpha = 1 if n == 1 else 0.2
-    for _ in range(n):
+    returns = np.empty((n, desired_return.shape[-1]))
+    for n_i in range(n):
         transitions = run_episode(env, model, desired_return, desired_horizon, max_return)
         # compute return
         for i in reversed(range(len(transitions)-1)):
             transitions[i].reward += gamma * transitions[i+1].reward
         
+        returns[n_i] = transitions[i].reward.flatten()
         print(f'ran model with desired-return: {desired_return.flatten()}, got {transitions[i].reward.flatten()}')
         print('action sequence: ')
         for t in transitions:
             print(f'- {t.action}')
         plot_episode(transitions, alpha)
-
-    plt.show()
+    print(f'ran model with desired-return: {desired_return.flatten()}, got average return {returns.mean(0).flatten()}')
 
 
 if __name__ == '__main__':
@@ -104,6 +105,8 @@ if __name__ == '__main__':
     parser.add_argument('env', type=str, help='ode or binomial')
     parser.add_argument('model', type=str, help='load model')
     parser.add_argument('--n', type=int, default=1, help='evaluation runs')
+    parser.add_argument('--interactive', action='store_true', help='interactive policy selection')
+    parser.set_defaults(interactive=False)
     args = parser.parse_args()
     model_dir = pathlib.Path(args.model)
 
@@ -141,15 +144,28 @@ if __name__ == '__main__':
     max_return = np.array([-8000, 0])/scale
     print(env)
 
-    inp = None
+    inp = -1
+    if not args.interactive:
+        (model_dir / 'policies-executions').mkdir(exist_ok=True)
+        print('='*38)
+        print('not interactive, this may take a while')
+        print('='*38)
     while True:
-        print('solutions: ')
-        for i, p in enumerate(pareto_front):
-            print(f'{i} : {p}')
-        inp = input('-> ')
-
-        inp = int(inp)
+        if args.interactive:
+            print('solutions: ')
+            for i, p in enumerate(pareto_front):
+                print(f'{i} : {p}')
+            inp = input('-> ')
+            inp = int(inp)
+        else:
+            inp = inp+1
+            if inp >= len(pareto_front):
+                break
         desired_return = pareto_front[inp]
         desired_horizon = 17
 
         eval_pcn(env, model, desired_return, desired_horizon, max_return, n=args.n)
+        if args.interactive:
+            plt.show()
+        else:
+            plt.savefig(model_dir / 'policies-executions' / f'policy_{inp}.png')
