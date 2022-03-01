@@ -126,7 +126,10 @@ def plot_pareto_front(all_runs, jitter=0.01):
         print(p)
         jittered_p = p # + np.random.normal(0, p.std(axis=0, keepdims=True)*jitter, size=p.shape)
         coords = list(zip(*jittered_p))
+        coords = np.array(coords)*np.array([[10000], [100]])
         plt.gca().scatter(*coords, alpha=0.2, label=f'{k}')
+        plt.xlabel('total number of daily-new-hospitalizations')
+        plt.ylabel('social burden as cumulative contacts lost per person')
 
         df = pd.DataFrame(data=p, columns=[f'o{i}' for i in range(nO)])
         df.to_csv(f'/tmp/{k}.csv', index=False)
