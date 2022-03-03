@@ -96,7 +96,7 @@ class CovidModel(nn.Module):
             nn.Linear(64, 64),
             nn.Sigmoid()
         )
-        self.c_emb = nn.Sequential(nn.Linear(3, 64),
+        self.c_emb = nn.Sequential(nn.Linear(scaling_factor.shape[-1], 64),
                                    nn.Sigmoid())
         self.fc = nn.Sequential(nn.Linear(64, 64),
                                 nn.ReLU(),
@@ -134,7 +134,7 @@ class CovidModel2(nn.Module):
             nn.Linear(64, 64),
             nn.Sigmoid()
         )
-        self.c_emb = nn.Sequential(nn.Linear(3, 64),
+        self.c_emb = nn.Sequential(nn.Linear(scaling_factor.shape[-1], 64),
                                    nn.Sigmoid())
         self.fc = nn.Sequential(nn.Linear(64, 64),
                                 nn.ReLU(),
@@ -229,7 +229,7 @@ if __name__ == '__main__':
 
     env_type = 'ODE' if args.env == 'ode' else 'Binomial'
     n_evaluations = 1 if env_type == 'ODE' else 10
-    scale = np.array([10000, 100.])
+    scale = np.array([10000, 50., 50, 50])
     if args.action == 'discrete':
         env = gym.make(f'BECovidWithLockdown{env_type}Discrete-v0')
         nA = env.action_space.n
@@ -243,9 +243,9 @@ if __name__ == '__main__':
             nA = np.prod(env.action_space.shape)
     env = TodayWrapper(env)
     env = ScaleRewardEnv(env, scale=scale)
-    ref_point = np.array([-50000, -2000.0])/scale
-    scaling_factor = torch.tensor([[1, 1, 0.1]]).to(device)
-    max_return = np.array([-8000, 0])/scale
+    ref_point = np.array([-50000, -2000.0, -2000.0, -2000.0])/scale
+    scaling_factor = torch.tensor([[1, 1, 1, 1, 0.1]]).to(device)
+    max_return = np.array([-8000, 0, 0, 0])/scale
 
     env.nA = nA
     
