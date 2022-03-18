@@ -230,7 +230,7 @@ if __name__ == '__main__':
 
     env_type = 'ODE' if args.env == 'ode' else 'Binomial'
     n_evaluations = 1 if env_type == 'ODE' else 10
-    scale = np.array([10000, 50., 50, 50])
+    scale = np.array([10000, 50., 20, 50])
     if args.action == 'discrete':
         env = gym.make(f'BECovidWithLockdown{env_type}Discrete-v0')
         nA = env.action_space.n
@@ -246,7 +246,7 @@ if __name__ == '__main__':
     env = ScaleRewardEnv(env, scale=scale)
     ref_point = np.array([-200000, -1000.0, -1000.0, -1000.0])/scale
     scaling_factor = torch.tensor([[1, 1, 1, 1, 0.1]]).to(device)
-    max_return = np.array([-8000, 0, 0, 0])/scale
+    max_return = np.array([0, 0, 0, 0])/scale
 
     env.nA = nA
     
@@ -266,7 +266,7 @@ if __name__ == '__main__':
     #     model = torch.load(args.model, map_location=device).to(device)
     #     model.scaling_factor = model.scaling_factor.to(device)
 
-    logdir = f'{os.getenv("LOGDIR", "/tmp")}/pcn/pcn/'
+    logdir = f'{os.getenv("VSC_SCRATCH", "/tmp")}/pcn/commit_8cfebc4c41aa5c400a7e593ffd681c3c03e532b1/until2021/'
     logdir += '/'.join([f'{k}_{v}' for k, v in vars(args).items()]) + '/'
     logdir += datetime.now().strftime('%Y-%m-%d_%H-%M-%S_') + str(uuid.uuid4())[:4] + '/'
 
