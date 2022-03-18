@@ -6,6 +6,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from pygmo import hypervolume
 from logger import Logger
+import wandb
 
 
 def crowding_distance(points, ranks=None):
@@ -334,6 +335,7 @@ def train(env,
             hv = hypervolume(e_returns*-1)
             hv_est = hv.compute(ref_point*-1)
             logger.put('train/hypervolume', hv_est, step, 'scalar')
+            wandb.log({'hypervolume': hv_est}, step=step)
         except ValueError:
             pass
 
@@ -357,9 +359,24 @@ def train(env,
             logger.put(f'train/return/{o}/desired', np.mean(np.array(returns)[:, o]), step, 'scalar')
             logger.put(f'train/return/{o}/distance', np.linalg.norm(np.mean(np.array(returns)[:, o])-desired_return[o]), step, 'scalar')
         print(f'step {step} \t return {np.mean(returns, axis=0)}, ({np.std(returns, axis=0)}) \t loss {np.mean(loss):.3E}')
+        
+        # compute hypervolume of leaves
+        valid_e_returns = e_returns[np.all(e_returns >= ref_point, axis=1)]
+        hv = compute_hypervolume(valid_e_returns[None], ref_point)[0] if len(valid_e_returns) else 0
+
+        wandb.log({
+            'episode': total_episodes,
+            'episode_steps': np.mean(horizons),
+            'loss': np.mean(loss),
+            'entropy': np.mean(entropy),
+            'hypervolume': hv,
+        }, step=step)
+
         if step >= (n_checkpoints+1)*total_steps/10:
             torch.save(model, f'{logger.logdir}/model_{n_checkpoints+1}.pt')
             n_checkpoints += 1
+
+            coverage_set_table = wandb.Table(data=e_returns, columns=[f'o_{o}' for o in range(e_returns.shape[1])])
 
             # current coverage set
             e_returns, e_i = non_dominated(e_returns, return_indexes=True)
@@ -377,3 +394,9 @@ def train(env,
                 print('desired: ', d, '\t', 'return: ', r.mean(0))
             print(f'epsilon max/mean: {epsilon.max():.3f} \t {epsilon.mean():.3f}')
             print('='*22)
+
+            wandb.log({
+                'coverage_set': coverage_set_table,
+                'eps_max': epsilon.max(),
+                'eps_mean': epsilon.mean()
+            }, step=step)

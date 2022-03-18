@@ -4,6 +4,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import cv2
 import numpy as np
+import wandb
 
 
 class MultiDiscreteAction(gym.ActionWrapper):
@@ -243,7 +244,7 @@ if __name__ == '__main__':
             nA = np.prod(env.action_space.shape)
     env = TodayWrapper(env)
     env = ScaleRewardEnv(env, scale=scale)
-    ref_point = np.array([-50000, -2000.0, -2000.0, -2000.0])/scale
+    ref_point = np.array([-200000, -1000.0, -1000.0, -1000.0])/scale
     scaling_factor = torch.tensor([[1, 1, 1, 1, 0.1]]).to(device)
     max_return = np.array([-8000, 0, 0, 0])/scale
 
@@ -268,6 +269,8 @@ if __name__ == '__main__':
     logdir = f'{os.getenv("LOGDIR", "/tmp")}/pcn/pcn/'
     logdir += '/'.join([f'{k}_{v}' for k, v in vars(args).items()]) + '/'
     logdir += datetime.now().strftime('%Y-%m-%d_%H-%M-%S_') + str(uuid.uuid4())[:4] + '/'
+
+    wandb.init(project='pcn-covid', entity='mreymond', config={k: v for k, v in vars(args).items()})
 
     train(env,
         model,
