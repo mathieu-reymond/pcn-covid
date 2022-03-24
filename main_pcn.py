@@ -29,6 +29,7 @@ class ScaleRewardEnv(gym.RewardWrapper):
 
 class TodayWrapper(gym.Wrapper):
     def __init__(self, env, objectives):
+        super(TodayWrapper, self).__init__(env)
         self.objectives = objectives
 
     def reset(self):
