@@ -1,5 +1,5 @@
 from main_pcn import CovidModel, CovidModel2, MultiDiscreteHead, DiscreteHead, ContinuousHead, ScaleRewardEnv, TodayWrapper, multidiscrete_env
-from pcn import non_dominated, Transition, choose_action
+from pcn import non_dominated, Transition, choose_action, epsilon_metric
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
@@ -90,6 +90,7 @@ def eval_pcn(env, model, desired_return, desired_horizon, max_return, gamma=1., 
             print(f'- {t.action}')
         plot_episode(transitions, alpha)
     print(f'ran model with desired-return: {desired_return.flatten()}, got average return {returns.mean(0).flatten()}')
+    return returns
 
 
 if __name__ == '__main__':
@@ -104,6 +105,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='PCN')
     parser.add_argument('env', type=str, help='ode or binomial')
     parser.add_argument('model', type=str, help='load model')
+    parser.add_argument('--objectives', default=2, type=int, help='2, 4')
     parser.add_argument('--n', type=int, default=1, help='evaluation runs')
     parser.add_argument('--interactive', action='store_true', help='interactive policy selection')
     parser.set_defaults(interactive=False)
@@ -123,7 +125,18 @@ if __name__ == '__main__':
         pareto_front = pareto_front[pf[:,0]]
         
     env_type = 'ODE' if args.env == 'ode' else 'Binomial'
-    scale = np.array([10000, 100.])
+    if args.objectives == 2:
+        scale = np.array([10000, 100])
+        ref_point = np.array([-200000, -2000.0])/scale
+        scaling_factor = torch.tensor([[1, 1, 0.1]]).to(device)
+        max_return = np.array([-8000, 0])/scale
+    elif args.objectives == 4:
+        scale = np.array([10000, 50., 20, 50])
+        ref_point = np.array([-200000, -1000.0, -1000.0, -1000.0])/scale
+        scaling_factor = torch.tensor([[1, 1, 1, 1, 0.1]]).to(device)
+        max_return = np.array([-8000, 0, 0, 0])/scale
+    else:
+        raise ValueError(f'invalid number of objectives: {args.objectives}')
     # hacky, d for discrete, m for multidiscrete, c for continuous
     action = str(model_dir)[str(model_dir).find('action')+7]
     if action == 'd':
@@ -131,17 +144,15 @@ if __name__ == '__main__':
         nA = env.action_space.n
     else:
         env = gym.make(f'BECovidWithLockdown{env_type}Continuous-v0')
+        # env = gym.make(f'BECovidWithLockdownUntil2021{env_type}Continuous-v0')
         if action == 'm':
             env = multidiscrete_env(env)
             nA = env.action_space.nvec.sum()
         else:
             nA = np.prod(env.action_space.shape)
             env.action = lambda x: x
-    env = TodayWrapper(env)
+    env = TodayWrapper(env, args.objectives)
     env = ScaleRewardEnv(env, scale=scale)
-    ref_point = np.array([-50000, -2000.0])/scale
-    scaling_factor = torch.tensor([[1, 1, 0.1]])
-    max_return = np.array([-8000, 0])/scale
     print(env)
 
     inp = -1
@@ -150,6 +161,7 @@ if __name__ == '__main__':
         print('='*38)
         print('not interactive, this may take a while')
         print('='*38)
+        all_returns = []
     while True:
         if args.interactive:
             print('solutions: ')
@@ -162,10 +174,19 @@ if __name__ == '__main__':
             if inp >= len(pareto_front):
                 break
         desired_return = pareto_front[inp]
-        desired_horizon = 17
+        desired_horizon = 17 #35
 
-        eval_pcn(env, model, desired_return, desired_horizon, max_return, n=args.n)
+        r = eval_pcn(env, model, desired_return, desired_horizon, max_return, n=args.n)
         if args.interactive:
             plt.show()
         else:
             plt.savefig(model_dir / 'policies-executions' / f'policy_{inp}.png')
+            all_returns.append(r)
+    import pickle
+    with open(model_dir / 'returns.pkl', 'wb') as f:
+        all_returns = np.array(all_returns)
+        # compute e-metric
+        epsilon = epsilon_metric(all_returns.mean(axis=1), pareto_front)
+        print(f'epsilon-max: {epsilon.max()}')
+        print(f'epsilon-mean: {epsilon.mean()}')
+        pickle.dump(all_returns, f)

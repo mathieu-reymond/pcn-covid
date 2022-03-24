@@ -28,6 +28,9 @@ class ScaleRewardEnv(gym.RewardWrapper):
 
 
 class TodayWrapper(gym.Wrapper):
+    def __init__(self, env, objectives):
+        self.objectives = objectives
+
     def reset(self):
         s = super(TodayWrapper, self).reset()
         ss, se = s
@@ -38,7 +41,12 @@ class TodayWrapper(gym.Wrapper):
     def step(self, action):
         s, r, d, i = super(TodayWrapper, self).step(action)
         ss, se = s
-        return (ss[-1].T, se[-1]), r[1:], d, i
+        # sum all the social burden objectives together:
+        if self.objectives == 2:
+            r = np.array([r[1], np.sum(r[2:])])
+        else:
+            r = r[1:]
+        return (ss[-1].T, se[-1]), r, d, i
 
 
 class HistoryEnv(gym.Wrapper):
@@ -206,6 +214,7 @@ if __name__ == '__main__':
     import gym_covid
 
     parser = argparse.ArgumentParser(description='PCN')
+    parser.add_argument('--objectives', default=2, type=int, help='2, 4')
     parser.add_argument('--env', default='ode', type=str, help='ode or binomial')
     parser.add_argument('--action', default='discrete', type=str, help='discrete, multidiscrete or continuous')
     parser.add_argument('--lr', default=1e-3, type=float, help='learning rate')
@@ -230,7 +239,18 @@ if __name__ == '__main__':
 
     env_type = 'ODE' if args.env == 'ode' else 'Binomial'
     n_evaluations = 1 if env_type == 'ODE' else 10
-    scale = np.array([10000, 50., 20, 50])
+    if args.objectives == 2:
+        scale = np.array([10000, 100])
+        ref_point = np.array([-200000, -2000.0])/scale
+        scaling_factor = torch.tensor([[1, 1, 0.1]]).to(device)
+        max_return = np.array([-8000, 0])/scale
+    elif args.objectives == 4:
+        scale = np.array([10000, 50., 20, 50])
+        ref_point = np.array([-200000, -1000.0, -1000.0, -1000.0])/scale
+        scaling_factor = torch.tensor([[1, 1, 1, 1, 0.1]]).to(device)
+        max_return = np.array([-8000, 0, 0, 0])/scale
+    else:
+        raise ValueError(f'invalid number of objectives: {args.objectives}')
     if args.action == 'discrete':
         env = gym.make(f'BECovidWithLockdown{env_type}Discrete-v0')
         nA = env.action_space.n
@@ -242,11 +262,8 @@ if __name__ == '__main__':
         # continuous
         else:
             nA = np.prod(env.action_space.shape)
-    env = TodayWrapper(env)
+    env = TodayWrapper(env, args.objectives)
     env = ScaleRewardEnv(env, scale=scale)
-    ref_point = np.array([-200000, -1000.0, -1000.0, -1000.0])/scale
-    scaling_factor = torch.tensor([[1, 1, 1, 1, 0.1]]).to(device)
-    max_return = np.array([0, 0, 0, 0])/scale
 
     env.nA = nA
     
