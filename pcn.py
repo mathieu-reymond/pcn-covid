@@ -395,8 +395,8 @@ def train(env,
             print(f'epsilon max/mean: {epsilon.max():.3f} \t {epsilon.mean():.3f}')
             print('='*22)
 
-            nd_coverage_set_table = wandb.Table(data=e_returns, columns=[f'o_{o}' for o in range(e_returns.shape[1])])
-            nd_executions_table = wandb.Table(data=e_r.mean(axis=1), columns=[f'o_{o}' for o in range(e_returns.shape[1])])
+            nd_coverage_set_table = wandb.Table(data=e_returns*env.scale[None], columns=[f'o_{o}' for o in range(e_returns.shape[1])])
+            nd_executions_table = wandb.Table(data=e_r.mean(axis=1)*env.scale[None], columns=[f'o_{o}' for o in range(e_returns.shape[1])])
 
             wandb.log({
                 'coverage_set': coverage_set_table,
