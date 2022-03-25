@@ -44,9 +44,11 @@ class TodayWrapper(gym.Wrapper):
         ss, se = s
         # sum all the social burden objectives together:
         if self.objectives == 2:
-            r = np.array([r[1], np.sum(r[2:])])
+            r = np.array([r[0], np.sum(r[2:])])
+            # r = np.array([r[1], np.sum(r[2:])])
         else:
-            r = r[1:]
+            r = np.concatenate((r[0:1], r[2:]), 0)
+            # r = r[1:]
         return (ss[-1].T, se[-1]), r, d, i
 
 
@@ -241,12 +243,14 @@ if __name__ == '__main__':
     env_type = 'ODE' if args.env == 'ode' else 'Binomial'
     n_evaluations = 1 if env_type == 'ODE' else 10
     if args.objectives == 2:
-        scale = np.array([10000, 100])
+        scale = np.array([800000, 100])
+        # scale = np.array([10000, 100])
         ref_point = np.array([-200000, -2000.0])/scale
         scaling_factor = torch.tensor([[1, 1, 0.1]]).to(device)
         max_return = np.array([-8000, 0])/scale
     elif args.objectives == 4:
-        scale = np.array([10000, 50., 20, 50])
+        scale = np.array([800000, 50., 20, 50])
+        # scale = np.array([10000, 50., 20, 50])
         ref_point = np.array([-200000, -1000.0, -1000.0, -1000.0])/scale
         scaling_factor = torch.tensor([[1, 1, 1, 1, 0.1]]).to(device)
         max_return = np.array([-8000, 0, 0, 0])/scale
@@ -284,7 +288,7 @@ if __name__ == '__main__':
     #     model = torch.load(args.model, map_location=device).to(device)
     #     model.scaling_factor = model.scaling_factor.to(device)
 
-    logdir = f'{os.getenv("VSC_SCRATCH", "/tmp")}/pcn/commit_8cfebc4c41aa5c400a7e593ffd681c3c03e532b1/until2021/'
+    logdir = f'{os.getenv("VSC_SCRATCH", "/tmp")}/pcn/commit_4bb5737a95d81615ce00b8a3b06f5d3197007627/'
     logdir += '/'.join([f'{k}_{v}' for k, v in vars(args).items()]) + '/'
     logdir += datetime.now().strftime('%Y-%m-%d_%H-%M-%S_') + str(uuid.uuid4())[:4] + '/'
 
