@@ -28,26 +28,23 @@ class ScaleRewardEnv(gym.RewardWrapper):
 
 
 class TodayWrapper(gym.Wrapper):
-    def __init__(self, env, objectives):
+    def __init__(self, env):
         super(TodayWrapper, self).__init__(env)
-        self.objectives = objectives
 
     def reset(self):
         s = super(TodayWrapper, self).reset()
-        ss, se = s
-        return (ss[-1].T, se[-1])
+        ss, se, sa = s
+        return (ss[-1].T, se[-1], sa)
     # step function of covid env returns simulation results of every day of timestep
     # only keep current day
     # also discard first reward
     def step(self, action):
         s, r, d, i = super(TodayWrapper, self).step(action)
-        ss, se = s
+        ss, se, sa = s
         # sum all the social burden objectives together:
-        if self.objectives == 2:
-            r = np.array([r[1], np.sum(r[2:])])
-        else:
-            r = r[1:]
-        return (ss[-1].T, se[-1]), r, d, i
+        p_tot = r[2:].sum()
+        r = np.concatenate((r, p_tot[None]))
+        return (ss[-1].T, se[-1], sa), r, d, i
 
 
 class HistoryEnv(gym.Wrapper):
@@ -83,13 +80,8 @@ class HistoryEnv(gym.Wrapper):
         return np.concatenate(self._state, axis=0), r, d, i
 
 
-class CovidModel(nn.Module):
-
-    def __init__(self, nA, scaling_factor, n_hidden=64):
-        super(CovidModel, self).__init__()
-
-        self.scaling_factor = scaling_factor
-        self.ss_emb = nn.Sequential(
+ss_emb = {
+    'conv1d': nn.Sequential(
             nn.Conv1d(10, 20, kernel_size=3, stride=2, groups=5),
             nn.ReLU(),
             nn.Conv1d(20, 20, kernel_size=2, stride=1, groups=10),
@@ -97,65 +89,83 @@ class CovidModel(nn.Module):
             nn.Flatten(),
             nn.Linear(100, 64),
             nn.Sigmoid()
-        )
-        self.se_emb = nn.Sequential(
-            nn.Linear(1, 64),
-            nn.Sigmoid()
-        )
-        self.s_emb = nn.Sequential(
-            nn.Linear(64, 64),
-            nn.Sigmoid()
-        )
-        self.c_emb = nn.Sequential(nn.Linear(scaling_factor.shape[-1], 64),
-                                   nn.Sigmoid())
-        self.fc = nn.Sequential(nn.Linear(64, 64),
-                                nn.ReLU(),
-                                nn.Linear(64, nA))
-
-    def forward(self, state, desired_return, desired_horizon):
-        c = torch.cat((desired_return, desired_horizon), dim=-1)
-        # commands are scaled by a fixed factor
-        c = c*self.scaling_factor
-        ss, se = state
-        s = self.ss_emb(ss.float())+self.se_emb(se.float())
-        s = self.s_emb(s)
-        c = self.c_emb(c)
-        # element-wise multiplication of state-embedding and command
-        log_prob = self.fc(s*c)
-        return log_prob
-
-
-class CovidModel2(nn.Module):
-
-    def __init__(self, nA, scaling_factor, n_hidden=64):
-        super(CovidModel2, self).__init__()
-
-        self.scaling_factor = scaling_factor
-        self.ss_emb = nn.Sequential(
+        ),
+    'small': nn.Sequential(
             nn.Flatten(),
             nn.Linear(130, 64),
             nn.Sigmoid()
-        )
-        self.se_emb = nn.Sequential(
+        ),
+    'big': nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(130, 64),
+            nn.ReLU(),
+            nn.Linear(64, 64),
+            nn.Sigmoid()
+        ),
+}
+
+
+se_emb = {
+    'small': nn.Sequential(
             nn.Linear(1, 64),
             nn.Sigmoid()
+        ),
+    'big': nn.Sequential(
+            nn.Linear(1, 64),
+            nn.ReLU(),
+            nn.Linear(64, 64),
+            nn.Sigmoid()
         )
+}
+
+
+sa_emb = {
+    'small': nn.Sequential(
+            nn.Linear(3, 64),
+            nn.Sigmoid()
+        ),
+    'big': nn.Sequential(
+            nn.Linear(3, 64),
+            nn.ReLU(),
+            nn.Linear(64, 64),
+            nn.Sigmoid()
+        )
+}
+
+class CovidModel(nn.Module):
+
+    def __init__(self,
+                 nA,
+                 scaling_factor,
+                 objectives,
+                 ss_emb,
+                 se_emb,
+                 sa_emb):
+        super(CovidModel, self).__init__()
+
+        self.scaling_factor = scaling_factor[:,objectives + (len(scaling_factor)-1,)]
+        self.objectives = objectives
+        self.ss_emb = ss_emb
+        self.se_emb = se_emb
+        self.sa_emb = sa_emb
         self.s_emb = nn.Sequential(
             nn.Linear(64, 64),
             nn.Sigmoid()
         )
-        self.c_emb = nn.Sequential(nn.Linear(scaling_factor.shape[-1], 64),
+        self.c_emb = nn.Sequential(nn.Linear(self.scaling_factor.shape[-1], 64),
                                    nn.Sigmoid())
         self.fc = nn.Sequential(nn.Linear(64, 64),
                                 nn.ReLU(),
                                 nn.Linear(64, nA))
 
     def forward(self, state, desired_return, desired_horizon):
+        # filter desired_return to only keep used objectives
+        desired_return = desired_return[:,self.objectives]
         c = torch.cat((desired_return, desired_horizon), dim=-1)
         # commands are scaled by a fixed factor
         c = c*self.scaling_factor
-        ss, se = state
-        s = self.ss_emb(ss.float())+self.se_emb(se.float())
+        ss, se, sa = state
+        s = self.ss_emb(ss.float())*self.se_emb(se.float())*self.sa_emb(sa.float())
         s = self.s_emb(s)
         c = self.c_emb(c)
         # element-wise multiplication of state-embedding and command
@@ -192,9 +202,9 @@ class ContinuousHead(nn.Module):
         self.base = base
     def forward(self, state, desired_return, desired_horizon):
         x = self.base(state, desired_return, desired_horizon)
-        x = torch.tanh(x)
+        x = torch.sigmoid(x)
         # bound in [0, 1]
-        x = (x+1)/2
+        # x = (x+1)/2
         return x
 
 
@@ -215,7 +225,7 @@ if __name__ == '__main__':
     import gym_covid
 
     parser = argparse.ArgumentParser(description='PCN')
-    parser.add_argument('--objectives', default=2, type=int, help='2, 4')
+    parser.add_argument('--objectives', default=[1, 5], type=int, nargs='+', help='index for ari, arh, pw, ps, pl, ptot')
     parser.add_argument('--env', default='ode', type=str, help='ode or binomial')
     parser.add_argument('--action', default='discrete', type=str, help='discrete, multidiscrete or continuous')
     parser.add_argument('--lr', default=1e-3, type=float, help='learning rate')
@@ -232,7 +242,7 @@ if __name__ == '__main__':
         help='max size (in episodes) of the ER buffer')
     parser.add_argument('--threshold', default=0.02, type=float, help='crowding distance threshold before penalty')
     parser.add_argument('--noise', default=0.0, type=float, help='noise applied on target-return on batch-update')
-    parser.add_argument('--model', default='conv1d', type=str, help='conv1d, dense')
+    parser.add_argument('--model', default='conv1dsmall', type=str, help='conv1d(big|small), dense(big|small)')
     args = parser.parse_args()
     print(args)
 
@@ -240,18 +250,13 @@ if __name__ == '__main__':
 
     env_type = 'ODE' if args.env == 'ode' else 'Binomial'
     n_evaluations = 1 if env_type == 'ODE' else 10
-    if args.objectives == 2:
-        scale = np.array([10000, 100])
-        ref_point = np.array([-200000, -2000.0])/scale
-        scaling_factor = torch.tensor([[1, 1, 0.1]]).to(device)
-        max_return = np.array([-8000, 0])/scale
-    elif args.objectives == 4:
-        scale = np.array([10000, 50., 20, 50])
-        ref_point = np.array([-200000, -1000.0, -1000.0, -1000.0])/scale
-        scaling_factor = torch.tensor([[1, 1, 1, 1, 0.1]]).to(device)
-        max_return = np.array([-8000, 0, 0, 0])/scale
-    else:
-        raise ValueError(f'invalid number of objectives: {args.objectives}')
+    scale = np.array([800000, 10000, 50., 20, 50, 100])
+    ref_point = np.array([-15000000, -200000, -1000.0, -1000.0, -1000.0, -1000.0])/scale
+    scaling_factor = torch.tensor([[1, 1, 1, 1, 1, 1, 0.1]]).to(device)
+    max_return = np.array([0, 0, 0, 0, 0, 0])/scale
+    # max_return = np.array([0, -8000, 0, 0, 0, 0])/scale
+    # keep only a selection of objectives
+
     if args.action == 'discrete':
         env = gym.make(f'BECovidWithLockdown{env_type}Discrete-v0')
         nA = env.action_space.n
@@ -263,16 +268,22 @@ if __name__ == '__main__':
         # continuous
         else:
             nA = np.prod(env.action_space.shape)
-    env = TodayWrapper(env, args.objectives)
+    env = TodayWrapper(env)
     env = ScaleRewardEnv(env, scale=scale)
 
     env.nA = nA
     
-    models = {
-        'conv1d': CovidModel,
-        'dense': CovidModel2
-    }
-    model = models[args.model](nA, scaling_factor).to(device)
+    if args.model == 'conv1dbig':
+        ss, se, sa = ss_emb['conv1d'], se_emb['big'], sa_emb['big']
+    elif args.model == 'conv1dsmall':
+        ss, se, sa = ss_emb['conv1d'], se_emb['small'], sa_emb['small']
+    elif args.model == 'densebig':
+        ss, se, sa = ss_emb['big'], se_emb['big'], sa_emb['big']
+    elif args.model == 'densesmall':
+        ss, se, sa = ss_emb['small'], se_emb['small'], sa_emb['small']
+    else:
+        raise ValueError(f'unknown model type: {args.model}')
+    model = CovidModel(nA, scaling_factor, tuple(args.objectives), ss, se, sa).to(device)
 
     if args.action == 'discrete':
         model = DiscreteHead(model)
@@ -304,4 +315,5 @@ if __name__ == '__main__':
         ref_point=ref_point,
         noise=args.noise,
         n_evaluations=n_evaluations,
+        objectives=tuple(args.objectives),
         logdir=logdir)

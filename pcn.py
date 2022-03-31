@@ -7,6 +7,7 @@ import torch.nn.functional as F
 from pygmo import hypervolume
 from logger import Logger
 import wandb
+import pickle
 
 
 def crowding_distance(points, ranks=None):
@@ -112,8 +113,10 @@ def compute_hypervolume(q_set, ref):
         q_values[i] = hv.compute(ref*-1)
     return q_values
 
-def nlargest(n, experience_replay, threshold=.2):
+def nlargest(n, experience_replay, objectives, threshold=.2):
     returns = np.array([e[2][0].reward for e in experience_replay])
+    # keep only used objectives
+    returns = returns[:, objectives]
     # crowding distance of each point, check ones that are too close together
     distances = crowding_distance(returns)
     sma = np.argwhere(distances <= threshold).flatten()
@@ -202,9 +205,9 @@ def run_episode(env, model, desired_return, desired_horizon, max_return, eval=Fa
         desired_horizon = np.float32(max(desired_horizon-1, 1.))
     return transitions
 
-def choose_commands(experience_replay, n_episodes, threshold=0.2):
+def choose_commands(experience_replay, n_episodes, objectives, threshold=0.2):
     # get best episodes, according to their crowding distance
-    episodes = nlargest(n_episodes, experience_replay ,threshold=threshold)
+    episodes = nlargest(n_episodes, experience_replay, objectives ,threshold=threshold)
     returns, horizons = list(zip(*[(e[2][0].reward, len(e[2])) for e in episodes]))
     # keep only non-dominated returns
     returns, nd_i = non_dominated(np.array(returns), return_indexes=True)
@@ -217,7 +220,7 @@ def choose_commands(experience_replay, n_episodes, threshold=0.2):
     # desired return is sampled from [M, M+S], to try to do better than mean return
     desired_return = returns[r_i].copy()
     # random objective
-    r_i = np.random.randint(0, len(desired_return))
+    r_i = np.random.choice(objectives)
     desired_return[r_i] += np.random.uniform(high=s[r_i])
     desired_return = np.float32(desired_return)
     return desired_return, desired_horizon
@@ -237,7 +240,7 @@ def update_model(model, opt, experience_replay, batch_size, noise=0.):
         batch.append((s_t, a_t, r_t, h_t))
 
     obs, actions, desired_return, desired_horizon = zip(*batch)
-    # since each state is a tuple with (compartment, events), reorder obs
+    # since each state is a tuple with (compartment, events, prev_action), reorder obs
     obs = zip(*obs)
     obs = tuple([torch.tensor(o).to(device) for o in obs])
     # TODO TEST add noise to the desired return
@@ -267,15 +270,19 @@ def update_model(model, opt, experience_replay, batch_size, noise=0.):
 
 def eval(env, model, coverage_set, horizons, max_return, gamma=1., n=10):
     e_returns = np.empty((coverage_set.shape[0], n, coverage_set.shape[-1]))
+    all_transitions = []
     for e_i, target_return, horizon in zip(np.arange(len(coverage_set)), coverage_set, horizons):
+        n_transitions = []
         for n_i in range(n):
             transitions = run_episode(env, model, target_return, np.float32(horizon), max_return, eval=True)
             # compute return
             for i in reversed(range(len(transitions)-1)):
                 transitions[i].reward += gamma * transitions[i+1].reward
             e_returns[e_i, n_i] = transitions[0].reward
+            n_transitions.append(transitions)
+        all_transitions.append(n_transitions)
 
-    return e_returns
+    return e_returns, all_transitions
 
 
 def train(env, 
@@ -292,9 +299,12 @@ def train(env,
           ref_point=np.array([0, 0]),
           threshold=0.2,
           noise=0.0,
+          objectives=None,
           n_evaluations=10,
           logdir='runs/'):
     step = 0
+    if objectives == None:
+        objectives = tuple([i for i in range(len(ref_point))])
     total_episodes = n_er_episodes
     opt = torch.optim.Adam(model.parameters(), lr=learning_rate)
     logger = Logger(logdir=logdir)
@@ -323,7 +333,7 @@ def train(env,
             ent = np.sum(-np.exp(lp)*lp)
             entropy.append(ent)
 
-        desired_return, desired_horizon = choose_commands(experience_replay, n_er_episodes)
+        desired_return, desired_horizon = choose_commands(experience_replay, n_er_episodes, objectives)
 
          # get all leaves, contain biggest elements, experience_replay got heapified in choose_commands
         leaves = np.array([(len(e[2]), e[2][0].reward) for e in experience_replay[len(experience_replay)//2:]])
@@ -332,10 +342,10 @@ def train(env,
         try:
             if len(experience_replay) == max_size:
                 logger.put('train/leaves', e_returns, step, f'{e_returns.shape[-1]}d')
-            hv = hypervolume(e_returns*-1)
-            hv_est = hv.compute(ref_point*-1)
-            logger.put('train/hypervolume', hv_est, step, 'scalar')
-            wandb.log({'hypervolume': hv_est}, step=step)
+            # hv = hypervolume(e_returns[...,objectives]*-1)
+            # hv_est = hv.compute(ref_point[objectives]*-1)
+            # logger.put('train/hypervolume', hv_est, step, 'scalar')
+            # wandb.log({'hypervolume': hv_est}, step=step)
         except ValueError:
             pass
 
@@ -361,8 +371,8 @@ def train(env,
         print(f'step {step} \t return {np.mean(returns, axis=0)}, ({np.std(returns, axis=0)}) \t loss {np.mean(loss):.3E}')
         
         # compute hypervolume of leaves
-        valid_e_returns = e_returns[np.all(e_returns >= ref_point, axis=1)]
-        hv = compute_hypervolume(valid_e_returns[None], ref_point)[0] if len(valid_e_returns) else 0
+        valid_e_returns = e_returns[np.all(e_returns[:,objectives] >= ref_point[objectives,], axis=1)]
+        hv = compute_hypervolume(np.expand_dims(valid_e_returns[:,objectives], 0), ref_point[objectives,])[0] if len(valid_e_returns) else 0
 
         wandb.log({
             'episode': total_episodes,
@@ -379,14 +389,15 @@ def train(env,
             coverage_set_table = wandb.Table(data=e_returns, columns=[f'o_{o}' for o in range(e_returns.shape[1])])
 
             # current coverage set
-            e_returns, e_i = non_dominated(e_returns, return_indexes=True)
+            _, e_i = non_dominated(e_returns[:,objectives], return_indexes=True)
+            e_returns = e_returns[e_i]
             e_lengths = e_lengths[e_i]
 
-            e_r = eval(env, model, e_returns, e_lengths, max_return, gamma=gamma, n=n_evaluations)
+            e_r, t_r = eval(env, model, e_returns, e_lengths, max_return, gamma=gamma, n=n_evaluations)
             # save raw evaluation returns
             logger.put(f'eval/returns/{n_checkpoints}', e_r, 0, f'{len(e_r)}d')
             # compute e-metric
-            epsilon = epsilon_metric(e_r.mean(axis=1), e_returns)
+            epsilon = epsilon_metric(e_r[...,objectives].mean(axis=1), e_returns[...,objectives])
             logger.put('eval/epsilon/max', epsilon.max(), step, 'scalar')
             logger.put('eval/epsilon/mean', epsilon.mean(), step, 'scalar')
             print('='*10, ' evaluation ', '='*10)
@@ -397,11 +408,17 @@ def train(env,
 
             nd_coverage_set_table = wandb.Table(data=e_returns*env.scale[None], columns=[f'o_{o}' for o in range(e_returns.shape[1])])
             nd_executions_table = wandb.Table(data=e_r.mean(axis=1)*env.scale[None], columns=[f'o_{o}' for o in range(e_returns.shape[1])])
+            executions_transitions = wandb.Artifact(
+                'execution-transitions', type='transitions'
+            )
+            with executions_transitions.new_file('transitions.pkl', 'wb') as f:
+                pickle.dump(t_r, f)
 
             wandb.log({
                 'coverage_set': coverage_set_table,
                 'nd_coverage_set': nd_coverage_set_table,
                 'executions': nd_executions_table,
                 'eps_max': epsilon.max(),
-                'eps_mean': epsilon.mean()
+                'eps_mean': epsilon.mean(),
             }, step=step)
+            wandb.log_artifact(executions_transitions)
