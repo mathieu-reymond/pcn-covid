@@ -408,8 +408,9 @@ def train(env,
 
             nd_coverage_set_table = wandb.Table(data=e_returns*env.scale[None], columns=[f'o_{o}' for o in range(e_returns.shape[1])])
             nd_executions_table = wandb.Table(data=e_r.mean(axis=1)*env.scale[None], columns=[f'o_{o}' for o in range(e_returns.shape[1])])
+            
             executions_transitions = wandb.Artifact(
-                'execution-transitions', type='transitions'
+                f'run-{wandb.run.id}-execution-transitions', type='transitions'
             )
             with executions_transitions.new_file('transitions.pkl', 'wb') as f:
                 pickle.dump(t_r, f)
@@ -421,4 +422,4 @@ def train(env,
                 'eps_max': epsilon.max(),
                 'eps_mean': epsilon.mean(),
             }, step=step)
-            wandb.log_artifact(executions_transitions)
+            wandb.run.log_artifact(executions_transitions)
