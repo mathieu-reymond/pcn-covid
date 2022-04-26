@@ -17,7 +17,7 @@ Have a look at the different parameters:
 python main_pcn.py --help
 ```
 
-For example, to run the the binomial env with continuous actions:
+For example, to run the binomial env with continuous actions:
 ```
 python main_pcn.py --env binomial --action continuous
 ```
