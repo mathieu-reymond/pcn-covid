@@ -327,7 +327,7 @@ def train(env,
         loss = []
         entropy = []
         for _ in range(n_model_updates):
-            l, lp = update_model(model, opt, experience_replay, batch_size=batch_size)
+            l, lp = update_model(model, opt, experience_replay, batch_size=batch_size, noise=noise)
             loss.append(l.detach().cpu().numpy())
             lp = lp.detach().cpu().numpy()
             ent = np.sum(-np.exp(lp)*lp)
