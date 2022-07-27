@@ -250,7 +250,7 @@ if __name__ == '__main__':
 
     env_type = 'ODE' if args.env == 'ode' else 'Binomial'
     n_evaluations = 1 if env_type == 'ODE' else 10
-    scale = np.array([800000, 10000, 50., 20, 50, 100])
+    scale = np.array([800000, 10000, 50., 20, 50, 90])
     ref_point = np.array([-15000000, -200000, -1000.0, -1000.0, -1000.0, -1000.0])/scale
     scaling_factor = torch.tensor([[1, 1, 1, 1, 1, 1, 0.1]]).to(device)
     max_return = np.array([0, 0, 0, 0, 0, 0])/scale
