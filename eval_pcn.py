@@ -1,9 +1,10 @@
-from main_pcn import CovidModel, CovidModel2, MultiDiscreteHead, DiscreteHead, ContinuousHead, ScaleRewardEnv, TodayWrapper, multidiscrete_env
+from main_pcn import CovidModel, MultiDiscreteHead, DiscreteHead, ContinuousHead, ScaleRewardEnv, TodayWrapper, multidiscrete_env
 from pcn import non_dominated, Transition, choose_action, epsilon_metric
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
 import datetime
+import pandas as pd
 
 
 device = 'cpu'
@@ -21,13 +22,14 @@ def run_episode(env, model, desired_return, desired_horizon, max_return):
             observation=obs[0],
             action=env.action(action),
             reward=np.float32(reward).copy(),
-            next_observation=n_obs,
+            next_observation=n_obs[0],
             terminal=done
         ))
 
         obs = n_obs
         # clip desired return, to return-upper-bound, 
         # to avoid negative returns giving impossible desired returns
+        # reward = np.array((reward[1], reward[2]))
         desired_return = np.clip(desired_return-reward, None, max_return, dtype=np.float32)
         # clip desired horizon to avoid negative horizons
         desired_horizon = np.float32(max(desired_horizon-1, 1.))
@@ -36,10 +38,15 @@ def run_episode(env, model, desired_return, desired_horizon, max_return):
 
 def plot_episode(transitions, alpha=1.):
     states = np.array([t.observation for t in transitions])
+    # add final state
+    states = np.concatenate((states, transitions[-1].next_observation[None]), axis=0)
+    ari = (states[:-1,:,0]-states[1:,:,0]).sum(axis=-1)
     i_hosp_new = states[...,-3].sum(axis=-1)
     i_icu_new = states[...,-2].sum(axis=-1)
     d_new = states[...,-1].sum(axis=-1)
     actions = np.array([t.action for t in transitions])
+    # append action of None
+    actions = np.concatenate((actions, [[None]*3]))
 
     # steps in dates
     start = datetime.date(2020, 5, 3)
@@ -57,6 +64,7 @@ def plot_episode(transitions, alpha=1.):
     # deaths
     ax = axs[1]
     ax.plot(d_new, alpha=alpha, label='deaths', color='red')
+    # ax.plot(ari, alpha=alpha, label='ari', color='black')
 
     # actions
     ax = axs[2]
@@ -71,12 +79,14 @@ def plot_episode(transitions, alpha=1.):
     axs[2].set_ylabel('actions')
     # for ax in axs:
     #     ax.legend()
+    return [start+week*i for i in range(0, 18, 1)], ari, i_hosp_new, i_icu_new, d_new, actions[:, 0], actions[:, 1], actions[:, 2]
 
 
-def eval_pcn(env, model, desired_return, desired_horizon, max_return, gamma=1., n=1):
+def eval_pcn(env, model, desired_return, desired_horizon, max_return, objectives, gamma=1., n=1):
     plt.subplots(3, 1, sharex=True)
     alpha = 1 if n == 1 else 0.2
     returns = np.empty((n, desired_return.shape[-1]))
+    all_transitions = []
     for n_i in range(n):
         transitions = run_episode(env, model, desired_return, desired_horizon, max_return)
         # compute return
@@ -88,9 +98,20 @@ def eval_pcn(env, model, desired_return, desired_horizon, max_return, gamma=1., 
         print('action sequence: ')
         for t in transitions:
             print(f'- {t.action}')
-        plot_episode(transitions, alpha)
-    print(f'ran model with desired-return: {desired_return.flatten()}, got average return {returns.mean(0).flatten()}')
-    return returns
+        t = plot_episode(transitions, alpha)
+        t = t + tuple(zip(*[ti.reward*env.scale for ti in transitions]))
+
+        df = pd.DataFrame([x for x in zip(*t)], columns=['dates', 'ari', 'i_hosp_new', 'i_icu_new', 'd_new', 'p_w', 'p_s', 'p_l'] + [f'o_{oi}' for oi in range(returns.shape[1])])
+        # manually set p_s to 0 during school holidays
+        holidays = df['dates'] >= datetime.date(2020, 7, 1)
+        df['p_s'][holidays] = 0
+        all_transitions.append(df)
+    title = 'Re: '+ ' '.join([f'{o:.3f}' for o in (returns.mean(0)*env.scale)[objectives]])
+    title += '\n'
+    title += 'Rt: '+ ' '.join([f'{o:.3f}' for o in (desired_return*env.scale)[objectives]])
+    plt.suptitle(title)
+    print(f'ran model with desired-return: {desired_return[objectives].flatten()}, got average return {returns[:,objectives].mean(0).flatten()}')
+    return returns, all_transitions
 
 
 if __name__ == '__main__':
@@ -105,7 +126,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='PCN')
     parser.add_argument('env', type=str, help='ode or binomial')
     parser.add_argument('model', type=str, help='load model')
-    parser.add_argument('--objectives', default=2, type=int, help='2, 4')
+    parser.add_argument('--objectives', default=[1, 5], type=int, nargs='+', help='index for ari, arh, pw, ps, pl, ptot')
     parser.add_argument('--n', type=int, default=1, help='evaluation runs')
     parser.add_argument('--interactive', action='store_true', help='interactive policy selection')
     parser.set_defaults(interactive=False)
@@ -114,29 +135,24 @@ if __name__ == '__main__':
 
     log = model_dir / 'log.h5'
     log = h5py.File(log)
-    checkpoints = [str(p) for p in model_dir.glob('model_*.pt')]
+    checkpoints = [str(p) for p in model_dir.glob('model_10.pt')]
     checkpoints = sorted(checkpoints)
     model = torch.load(checkpoints[-1])
 
     with log:
         pareto_front = log['train/leaves/ndarray'][-1]
-        pareto_front = non_dominated(pareto_front)
+        _, pareto_front_i = non_dominated(pareto_front[:,args.objectives], return_indexes=True)
+        pareto_front = pareto_front[pareto_front_i]
+
         pf = np.argsort(pareto_front, axis=0)
         pareto_front = pareto_front[pf[:,0]]
         
     env_type = 'ODE' if args.env == 'ode' else 'Binomial'
-    if args.objectives == 2:
-        scale = np.array([10000, 100])
-        ref_point = np.array([-200000, -2000.0])/scale
-        scaling_factor = torch.tensor([[1, 1, 0.1]]).to(device)
-        max_return = np.array([-8000, 0])/scale
-    elif args.objectives == 4:
-        scale = np.array([10000, 50., 20, 50])
-        ref_point = np.array([-200000, -1000.0, -1000.0, -1000.0])/scale
-        scaling_factor = torch.tensor([[1, 1, 1, 1, 0.1]]).to(device)
-        max_return = np.array([-8000, 0, 0, 0])/scale
-    else:
-        raise ValueError(f'invalid number of objectives: {args.objectives}')
+
+    scale = np.array([800000, 10000, 50., 20, 50, 100])
+    ref_point = np.array([-15000000, -200000, -1000.0, -1000.0, -1000.0, -1000.0])/scale
+    scaling_factor = torch.tensor([[1, 1, 1, 1, 1, 1, 0.1]]).to(device)
+    max_return = np.array([0, 0, 0, 0, 0, 0])/scale
     # hacky, d for discrete, m for multidiscrete, c for continuous
     action = str(model_dir)[str(model_dir).find('action')+7]
     if action == 'd':
@@ -151,7 +167,7 @@ if __name__ == '__main__':
         else:
             nA = np.prod(env.action_space.shape)
             env.action = lambda x: x
-    env = TodayWrapper(env, args.objectives)
+    env = TodayWrapper(env)
     env = ScaleRewardEnv(env, scale=scale)
     print(env)
 
@@ -166,7 +182,7 @@ if __name__ == '__main__':
         if args.interactive:
             print('solutions: ')
             for i, p in enumerate(pareto_front):
-                print(f'{i} : {p}')
+                print(f'{i} : {p[args.objectives]}')
             inp = input('-> ')
             inp = int(inp)
         else:
@@ -176,11 +192,14 @@ if __name__ == '__main__':
         desired_return = pareto_front[inp]
         desired_horizon = 17 #35
 
-        r = eval_pcn(env, model, desired_return, desired_horizon, max_return, n=args.n)
+        r, t = eval_pcn(env, model, desired_return, desired_horizon, max_return, args.objectives, n=args.n)
         if args.interactive:
             plt.show()
         else:
             plt.savefig(model_dir / 'policies-executions' / f'policy_{inp}.png')
+            for i, t_i in enumerate(t):
+                (model_dir / 'policies-transitions' / f'{inp}').mkdir(exist_ok=True, parents=True)
+                t_i.to_csv(model_dir / 'policies-transitions' / f'{inp}' / f'run_{i}.csv', index_label='index')
             all_returns.append(r)
     import pickle
     with open(model_dir / 'returns.pkl', 'wb') as f:

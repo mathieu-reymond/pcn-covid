@@ -1,0 +1,85 @@
+\begin{tikzpicture}
+\pgfplotsset{
+      scale only axis,
+      date coordinates in=x,
+      xticklabel=\day/\month,
+      height=2cm,
+    }
+    \begin{groupplot}[
+    group style={
+            % set how the plots should be organized
+            group size=1 by 3,
+            % only show ticklabels and axis labels on the bottom
+            y descriptions at=edge left,
+            x descriptions at=edge bottom,
+            % set the `vertical sep' to zero
+            horizontal sep=0pt,
+            vertical sep=0pt
+        },
+      width=9.5cm,
+      axis y line*=left,
+      xlabel={time},
+      ylabel={people},
+    ]
+    % GROUP WITH LEFT Y-AXIS: PEOPLE (HOSP, ICU, DEATHS)
+    \nextgroupplot[scaled y ticks=false]
+    \addplot[mark=none, cyan] table [x=dates, y=i_hosp_new, col sep=comma] {data/ode/policy_0.csv};
+    \label{i_hosp_new}
+    \addplot[mark=none, orange] table [x=dates, y=i_icu_new, col sep=comma] {data/ode/policy_0.csv};
+    \label{i_icu_new}
+    \addplot[mark=none, red] table [x=dates, y=d_new, col sep=comma] {data/ode/policy_0.csv};
+    \label{d_new}
+    \nextgroupplot[scaled y ticks=false]
+    \addplot[mark=none, cyan] table [x=dates, y=i_hosp_new, col sep=comma] {data/ode/policy_30.csv};
+    \addplot[mark=none, orange] table [x=dates, y=i_icu_new, col sep=comma] {data/ode/policy_30.csv};
+    \addplot[mark=none, red] table [x=dates, y=d_new, col sep=comma] {data/ode/policy_30.csv};
+    \nextgroupplot[scaled y ticks=false]
+    \addplot[mark=none, cyan] table [x=dates, y=i_hosp_new, col sep=comma] {data/ode/policy_139.csv};
+    \addplot[mark=none, orange] table [x=dates, y=i_icu_new, col sep=comma] {data/ode/policy_139.csv};
+    \addplot[mark=none, red] table [x=dates, y=d_new, col sep=comma] {data/ode/policy_139.csv};
+    \end{groupplot}
+    % GROUP WITH RIGHT Y-AXIS: ACTIONS (P_W, P_S, P_L)
+    \begin{groupplot}[
+    group style={
+            % set how the plots should be organized
+            group size=1 by 3,
+            % only show ticklabels and axis labels on the bottom
+            y descriptions at=edge right,
+            x descriptions at=edge bottom,
+            % set the `vertical sep' to zero
+            horizontal sep=0pt,
+            vertical sep=0pt
+        },
+      width=9.5cm,
+      axis y line*=right,
+      axis x line=none,
+      ymax=1.1,
+      ylabel={proportion},
+      legend style={at={(0.5,1)},anchor=south},
+    %   legend pos=outer north east,
+      legend columns=3, 
+      legend cell align=left,
+    ]
+    \nextgroupplot[scaled y ticks=false]
+    \addplot[mark=none, dashed, blue] table [x=dates, y=p_w, col sep=comma] {data/ode/policy_0.csv};
+    \label{p_w}
+    \addplot[mark=none, dashed, magenta] table [x=dates, y=p_s, col sep=comma] {data/ode/policy_0.csv};
+    \label{p_s}
+    \addplot[mark=none, dashed, darkgray] table [x=dates, y=p_l, col sep=comma] {data/ode/policy_0.csv};
+    \label{p_l}
+    \addlegendimage{/pgfplots/refstyle=i_hosp_new}\addlegendentry{$p_w$}
+    \addlegendimage{/pgfplots/refstyle=i_icu_new}\addlegendentry{$p_l$}
+    \addlegendimage{/pgfplots/refstyle=d_new}\addlegendentry{$p_s$}
+    \addlegendimage{/pgfplots/refstyle=p_w}\addlegendentry{{daily new hosp}}
+    \addlegendimage{/pgfplots/refstyle=p_s}\addlegendentry{{daily new ICU}}
+    \addlegendimage{/pgfplots/refstyle=p_l}\addlegendentry{{daily deaths}}
+    \nextgroupplot[scaled y ticks=false]
+    \addplot[mark=none, dashed, blue] table [x=dates, y=p_w, col sep=comma] {data/ode/policy_30.csv};
+    \addplot[mark=none, dashed, magenta] table [x=dates, y=p_s, col sep=comma] {data/ode/policy_30.csv};
+    \addplot[mark=none, dashed, darkgray] table [x=dates, y=p_l, col sep=comma] {data/ode/policy_30.csv};
+    \nextgroupplot[scaled y ticks=false]
+    \addplot[mark=none, dashed, blue] table [x=dates, y=p_w, col sep=comma] {data/ode/policy_139.csv};
+    \addplot[mark=none, dashed, magenta] table [x=dates, y=p_s, col sep=comma] {data/ode/policy_139.csv};
+    \addplot[mark=none, dashed, darkgray] table [x=dates, y=p_l, col sep=comma] {data/ode/policy_139.csv};
+    \end{groupplot}
+  \end{tikzpicture}
