@@ -149,12 +149,12 @@ class CovidModel(nn.Module):
         self.se_emb = se_emb
         self.sa_emb = sa_emb
         self.s_emb = nn.Sequential(
-            nn.Linear(64, 64),
+            nn.Linear(64*3, 64),
             nn.Sigmoid()
         )
         self.c_emb = nn.Sequential(nn.Linear(self.scaling_factor.shape[-1], 64),
                                    nn.Sigmoid())
-        self.fc = nn.Sequential(nn.Linear(64, 64),
+        self.fc = nn.Sequential(nn.Linear(64*2, 64),
                                 nn.ReLU(),
                                 nn.Linear(64, nA))
 
@@ -165,11 +165,14 @@ class CovidModel(nn.Module):
         # commands are scaled by a fixed factor
         c = c*self.scaling_factor
         ss, se, sa = state
-        s = self.ss_emb(ss.float())*self.se_emb(se.float())*self.sa_emb(sa.float())
+        # concatenate embeddings
+        s = torch.cat((self.ss_emb(ss.float()), self.se_emb(se.float()), self.sa_emb(sa.float())), 1)
         s = self.s_emb(s)
         c = self.c_emb(c)
         # element-wise multiplication of state-embedding and command
-        log_prob = self.fc(s*c)
+        # sc = s*c
+        sc = torch.cat((s, c), 1)
+        log_prob = self.fc(sc)
         return log_prob
 
 
