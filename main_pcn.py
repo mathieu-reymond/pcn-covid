@@ -298,11 +298,11 @@ if __name__ == '__main__':
     #     model = torch.load(args.model, map_location=device).to(device)
     #     model.scaling_factor = model.scaling_factor.to(device)
 
+    wandb.init(project='pcn-covid', entity='mreymond', config={k: v for k, v in vars(args).items()})
+
     logdir = f'{os.getenv("VSC_SCRATCH", "/tmp")}/pcn/commit_8cfebc4c41aa5c400a7e593ffd681c3c03e532b1/until2021/'
     logdir += '/'.join([f'{k}_{v}' for k, v in vars(args).items()]) + '/'
-    logdir += datetime.now().strftime('%Y-%m-%d_%H-%M-%S_') + str(uuid.uuid4())[:4] + '/'
-
-    wandb.init(project='pcn-covid', entity='mreymond', config={k: v for k, v in vars(args).items()})
+    logdir += datetime.now().strftime('%Y-%m-%d_%H-%M-%S_') + wandb.run.id + '/'
 
     train(env,
         model,
