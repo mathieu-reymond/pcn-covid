@@ -88,7 +88,7 @@ ss_emb = {
             nn.ReLU(),
             nn.Flatten(),
             nn.Linear(100, 64),
-            nn.Sigmoid()
+            nn.SiLU()
         ),
     'small': nn.Sequential(
             nn.Flatten(),
@@ -98,9 +98,9 @@ ss_emb = {
     'big': nn.Sequential(
             nn.Flatten(),
             nn.Linear(130, 64),
-            nn.ReLU(),
+            nn.SiLU(),
             nn.Linear(64, 64),
-            nn.Sigmoid()
+            nn.SiLU()
         ),
 }
 
@@ -112,9 +112,9 @@ se_emb = {
         ),
     'big': nn.Sequential(
             nn.Linear(1, 64),
-            nn.ReLU(),
+            nn.SiLU(),
             nn.Linear(64, 64),
-            nn.Sigmoid()
+            nn.SiLU()
         )
 }
 
@@ -126,9 +126,9 @@ sa_emb = {
         ),
     'big': nn.Sequential(
             nn.Linear(3, 64),
-            nn.ReLU(),
+            nn.SiLU(),
             nn.Linear(64, 64),
-            nn.Sigmoid()
+            nn.SiLU()
         )
 }
 
@@ -149,13 +149,13 @@ class CovidModel(nn.Module):
         self.se_emb = se_emb
         self.sa_emb = sa_emb
         self.s_emb = nn.Sequential(
-            nn.Linear(64*3, 64),
-            nn.Sigmoid()
+            nn.Linear(64, 64),
+            nn.SiLU()
         )
         self.c_emb = nn.Sequential(nn.Linear(self.scaling_factor.shape[-1], 64),
-                                   nn.Sigmoid())
-        self.fc = nn.Sequential(nn.Linear(64*2, 64),
-                                nn.ReLU(),
+                                   nn.SiLU())
+        self.fc = nn.Sequential(nn.Linear(64, 64),
+                                nn.SiLU(),
                                 nn.Linear(64, nA))
 
     def forward(self, state, desired_return, desired_horizon):
@@ -166,12 +166,14 @@ class CovidModel(nn.Module):
         c = c*self.scaling_factor
         ss, se, sa = state
         # concatenate embeddings
-        s = torch.cat((self.ss_emb(ss.float()), self.se_emb(se.float()), self.sa_emb(sa.float())), 1)
+        # s = torch.cat((self.ss_emb(ss.float()), self.se_emb(se.float()), self.sa_emb(sa.float())), 1)
+        # hadamard product on embeddings
+        s = self.ss_emb(ss.float())*self.se_emb(se.float())*self.sa_emb(sa.float())
         s = self.s_emb(s)
         c = self.c_emb(c)
         # element-wise multiplication of state-embedding and command
-        # sc = s*c
-        sc = torch.cat((s, c), 1)
+        sc = s*c
+        # sc = torch.cat((s, c), 1)
         log_prob = self.fc(sc)
         return log_prob
 
@@ -253,7 +255,7 @@ if __name__ == '__main__':
 
     env_type = 'ODE' if args.env == 'ode' else 'Binomial'
     n_evaluations = 1 if env_type == 'ODE' else 10
-    scale = np.array([800000, 10000, 50., 20, 50, 90])
+    scale = np.array([800000, 11000, 50., 20, 50, 120])
     ref_point = np.array([-15000000, -200000, -1000.0, -1000.0, -1000.0, -1000.0])/scale
     scaling_factor = torch.tensor([[1, 1, 1, 1, 1, 1, 0.1]]).to(device)
     max_return = np.array([0, 0, 0, 0, 0, 0])/scale
@@ -280,7 +282,7 @@ if __name__ == '__main__':
         ss, se, sa = ss_emb['conv1d'], se_emb['big'], sa_emb['big']
     elif args.model == 'conv1dsmall':
         ss, se, sa = ss_emb['conv1d'], se_emb['small'], sa_emb['small']
-    elif args.model == 'densebig':
+    elif args.model.startswith('densebig'):
         ss, se, sa = ss_emb['big'], se_emb['big'], sa_emb['big']
     elif args.model == 'densesmall':
         ss, se, sa = ss_emb['small'], se_emb['small'], sa_emb['small']
