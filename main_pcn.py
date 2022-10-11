@@ -100,7 +100,7 @@ ss_emb = {
             nn.Linear(130, 64),
             nn.SiLU(),
             nn.Linear(64, 64),
-            nn.SiLU()
+            nn.Sigmoid()
         ),
 }
 
@@ -114,7 +114,7 @@ se_emb = {
             nn.Linear(1, 64),
             nn.SiLU(),
             nn.Linear(64, 64),
-            nn.SiLU()
+            nn.Sigmoid()
         )
 }
 
@@ -128,7 +128,7 @@ sa_emb = {
             nn.Linear(3, 64),
             nn.SiLU(),
             nn.Linear(64, 64),
-            nn.SiLU()
+            nn.Sigmoid()
         )
 }
 
@@ -248,6 +248,7 @@ if __name__ == '__main__':
     parser.add_argument('--threshold', default=0.02, type=float, help='crowding distance threshold before penalty')
     parser.add_argument('--noise', default=0.0, type=float, help='noise applied on target-return on batch-update')
     parser.add_argument('--model', default='conv1dsmall', type=str, help='conv1d(big|small), dense(big|small)')
+    parser.add_argument('--clip_grad_norm', default=None, type=float, help='clip gradient norm during pcn update')
     args = parser.parse_args()
     print(args)
 
@@ -321,4 +322,5 @@ if __name__ == '__main__':
         noise=args.noise,
         n_evaluations=n_evaluations,
         objectives=tuple(args.objectives),
+        clip_grad_norm=args.clip_grad_norm,
         logdir=logdir)

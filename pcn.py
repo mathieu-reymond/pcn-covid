@@ -225,7 +225,7 @@ def choose_commands(experience_replay, n_episodes, objectives, threshold=0.2):
     desired_return = np.float32(desired_return)
     return desired_return, desired_horizon
 
-def update_model(model, opt, experience_replay, batch_size, noise=0.):
+def update_model(model, opt, experience_replay, batch_size, noise=0., clip_grad_norm=None):
     batch = []
     # randomly choose episodes from experience buffer
     s_i = np.random.choice(np.arange(len(experience_replay)), size=batch_size, replace=True)
@@ -263,6 +263,10 @@ def update_model(model, opt, experience_replay, batch_size, noise=0.):
         l = torch.sum(-actions*log_prob, -1).sum(-1)
     l = l.mean()
     l.backward()
+    if clip_grad_norm is not None:
+        # get model params directly from optimizer
+        for pg in opt.param_groups:
+            nn.utils.clip_grad_norm_(pg['params'], clip_grad_norm)
     opt.step()
 
     return l, log_prob
@@ -301,6 +305,7 @@ def train(env,
           noise=0.0,
           objectives=None,
           n_evaluations=10,
+          clip_grad_norm=None,
           logdir='runs/'):
     step = 0
     if objectives == None:
@@ -327,7 +332,7 @@ def train(env,
         loss = []
         entropy = []
         for _ in range(n_model_updates):
-            l, lp = update_model(model, opt, experience_replay, batch_size=batch_size, noise=noise)
+            l, lp = update_model(model, opt, experience_replay, batch_size=batch_size, noise=noise, clip_grad_norm=clip_grad_norm)
             loss.append(l.detach().cpu().numpy())
             lp = lp.detach().cpu().numpy()
             ent = np.sum(-np.exp(lp)*lp)
