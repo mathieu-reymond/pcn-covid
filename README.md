@@ -67,10 +67,10 @@ Existing trained SDTs are available, in 2 variants:
 
 1. A single SDT learning all the PCN policies at once. For this, the ID of the policy is one-hot encoded in the state-space, so the SDT can differentiate which policy should be executed. You can analyse the weights using the following command:
 ```
-python3.7 distil_policy.py --checkpoint SoftDecisionTree/saves/sdt_tacq8xdb_wt-True_ps-False.pt --with-targets  
+python distil_policy.py --checkpoint SoftDecisionTree/saves/sdt_tacq8xdb_wt-True_ps-False.pt --with-targets  
 ```
 
 2. A separate SDT for each policy. Use the following command:
 ```
-python3.7 distil_policy.py --checkpoint SoftDecisionTree/saves/sdt_tacq8xdb_wt-False_ps-True.pt --policy-specific 
+python distil_policy.py --checkpoint SoftDecisionTree/saves/sdt_tacq8xdb_wt-False_ps-True.pt --policy-specific 
 ``` 
