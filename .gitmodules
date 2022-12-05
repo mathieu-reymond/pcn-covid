@@ -1,0 +1,9 @@
+[submodule "SoftDecisionTree"]
+	path = SoftDecisionTree
+	url = git@github.com:mathieu-reymond/SoftDecisionTree.git
+[submodule "DynMORL"]
+	path = DynMORL
+	url = git@github.com:axelabels/DynMORL.git
+[submodule "MORL"]
+	path = MORL
+	url = git@github.com:RunzheYang/MORL.git

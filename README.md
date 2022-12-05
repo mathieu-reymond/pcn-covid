@@ -59,3 +59,18 @@ Or try out the policies directly using:
 ```
 python eval_pcn.py binomial runs/commit_4c805a2e2cffcfeaf853f91a80c872b2f4288e65/env_binomial/action_continuous/lr_0.001/steps_300000.0/batch_256/model_updates_50/top_episodes_200/n_episodes_10/er_size_500/threshold_0.02/noise_0.1/model_conv1d/2022-02-28_12-12-38_66aa/ --n 10 --interactive
 ```
+
+## Distil the policy to a Soft Decision Tree
+
+To help understand which features are important for the policy, we use Soft Decision Trees (SDTs).
+Existing trained SDTs are available, in 2 variants:
+
+1. A single SDT learning all the PCN policies at once. For this, the ID of the policy is one-hot encoded in the state-space, so the SDT can differentiate which policy should be executed. You can analyse the weights using the following command:
+```
+python3.7 distil_policy.py --checkpoint SoftDecisionTree/saves/sdt_tacq8xdb_wt-True_ps-False.pt --with-targets  
+```
+
+2. A separate SDT for each policy. Use the following command:
+```
+python3.7 distil_policy.py --checkpoint SoftDecisionTree/saves/sdt_tacq8xdb_wt-False_ps-True.pt --policy-specific 
+``` 
