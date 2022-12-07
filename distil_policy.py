@@ -6,7 +6,6 @@ import torch
 from torch.utils.data import TensorDataset, DataLoader
 from dataclasses import dataclass
 from SoftDecisionTree.sdt.model import SoftDecisionTree
-from pcn import Transition
 import wandb
 import os
 import time
@@ -25,6 +24,13 @@ import plotly.graph_objects as go
 batch_size = 32
 epochs = 2000
 
+@dataclass
+class Transition(object):
+    observation: np.ndarray
+    action: int
+    reward: float
+    next_observation: np.ndarray
+    terminal: bool
 
 @dataclass
 class AugmentedTransition(object):
