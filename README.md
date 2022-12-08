@@ -74,3 +74,5 @@ python distil_policy.py --checkpoint SoftDecisionTree/saves/sdt_tacq8xdb_wt-True
 ```
 python distil_policy.py --checkpoint SoftDecisionTree/saves/sdt_tacq8xdb_wt-False_ps-True.pt --policy-specific 
 ``` 
+
+Optionally, you can add the `--aggregate-compartments` flag so that the SDT visualization shows an aggregate of the compartments. Then, age-groups are split into youth (0-20), adults (20,60) and elderly (60+). The compartments are split in S, E, I (I_presym, I_asym, I_mild, I_sev), H (I_hosp, I_icu) and H_new (I_hosp_new, I_icu_new).

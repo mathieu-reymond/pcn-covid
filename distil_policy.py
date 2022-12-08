@@ -169,7 +169,26 @@ def visualize_sdt(sdt):
     plt.show()
 
 
-def visualize_sdt2(sdt, transitions=None, policy_i=None, with_targets=False):
+def aggregate_compartments(compartments):
+    # (10, 13) matrix with age-groups and compartments
+    # 0-10, 10-20
+    youth = np.mean(compartments[:2], axis=0)
+    # 20-30, 30-40, 40-50, 50-60
+    adults = np.mean(compartments[2:6], axis=0)
+    # 60+
+    elderly = np.mean(compartments[6:], axis=0)
+    yae = np.stack([youth, adults, elderly], axis=0)
+    # I compartments 'I_presym', 'I_asym', 'I_mild', 'I_sev',
+    i_ = np.mean(yae[:,2:6], axis=1)
+    # H compartments
+    h_ = np.mean(yae[:,6:8], axis=1)
+    # H_new compartments
+    n_ = np.mean(yae[:,10:12], axis=1)
+    compartments = np.stack([yae[:,0], yae[:,1], i_, h_, n_], axis=1)
+    return compartments
+
+
+def visualize_sdt2(sdt, transitions=None, policy_i=None, with_targets=False, with_aggregate_compartments=False):
     weights = sdt.weights.detach().numpy()
     biases = sdt.biases.detach().numpy()
     betas = sdt.betas.detach().numpy()
@@ -195,8 +214,10 @@ def visualize_sdt2(sdt, transitions=None, policy_i=None, with_targets=False):
         for i in range(2**depth):
             w = weights[2**depth+i-1]
             compartments = w[:130].reshape((10, 13))
+            if with_aggregate_compartments:
+                compartments = aggregate_compartments(compartments)
             school_holidays = w[130:131]
-            extras = np.full(10, np.nan)
+            extras = np.full(compartments.shape[0], np.nan)
             extras[0] = school_holidays
             # if with_targets:
             #     t_r = w[131:133]
@@ -265,8 +286,10 @@ def visualize_sdt2(sdt, transitions=None, policy_i=None, with_targets=False):
                     w = w_inp[2**depth+i-1]
                     prob_right = probs_right[2**depth+i-1]
                     compartments = w[:130].reshape((10, 13))
+                    if with_aggregate_compartments:
+                        compartments = aggregate_compartments(compartments)
                     school_holidays = w[130:131]
-                    extras = np.full(10, np.nan)
+                    extras = np.full(compartments.shape[0], np.nan)
                     extras[0] = school_holidays
                     # if with_targets:
                     #     w_t_r = w[131:133]
@@ -283,7 +306,8 @@ def visualize_sdt2(sdt, transitions=None, policy_i=None, with_targets=False):
                     prob_color = np.array([255, 0, 0])*prob_right+ np.array([0,255,0])*(1-prob_right)
                     prob_color =  f'rgb({prob_color[0]:.0f}, {prob_color[1]:.0f}, {prob_color[2]:.0f})'
                     # add color rectangle in heatmap for prob
-                    fig.add_trace(go.Scatter(x=[0, 12, 12 , 0, 0], y=[0, 0, 9, 9, 0], mode='lines', line={'color': prob_color}, visible=False), row=depth+1, col=col+1)
+                    w, h = compartments.shape
+                    fig.add_trace(go.Scatter(x=[0, h-1, h-1 , 0, 0], y=[0, 0, w-1, w-1, 0], mode='lines', line={'color': prob_color}, visible=False), row=depth+1, col=col+1)
             # fig.update_traces(showscale=False)
             # all these new plots are part of a separate slider step
             timestep_plots.append(np.arange(nb_plots, len(fig.data)))
@@ -401,6 +425,8 @@ if __name__ == '__main__':
         help='When using a single, multi-policy SDT, add the policy-index as one-hot in the state-space')
     parser.add_argument('--policy-specific', action='store_true',
         help='make a specific policy per SDT, instead of making a global SDT that encompasses all policies')
+    parser.add_argument('--aggregate-compartments', action='store_true',
+        help='aggregate the compartment model to [youth, adults, elderly] and [S, E, I, H, H_new]')
     args = parser.parse_args()
     print(args)
 
@@ -478,4 +504,4 @@ if __name__ == '__main__':
         # plt.show()
         # plt.close()
 
-        visualize_sdt2(policy, all_transitions[0], policy_i=policy_i, with_targets=with_targets)
+        visualize_sdt2(policy, all_transitions[0], policy_i=policy_i, with_targets=with_targets, with_aggregate_compartments=args.aggregate_compartments)
