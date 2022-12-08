@@ -212,40 +212,41 @@ def visualize_sdt2(sdt, transitions=None, policy_i=None, with_targets=False):
     fig.update_traces(showscale=False)
 
     if transitions is not None:
-        timestep_plots = [np.arange(len(fig.data))]
-        states = np.array([t.observation[0] for t in transitions])
-        # add final state
-        states = np.concatenate((states, transitions[-1].next_observation[0][None]), axis=0)
-        ari = (states[:-1,:,0]-states[1:,:,0]).sum(axis=-1)
-        i_hosp_new = states[...,-3].sum(axis=-1)
-        i_icu_new = states[...,-2].sum(axis=-1)
-        d_new = states[...,-1].sum(axis=-1)
-        actions = np.array([t.action for t in transitions])
-        # append action of None
-        actions = np.concatenate((actions, [[None]*3]))
-        
-        timesteps = np.arange(len(states))
-        # make plots for hospitalizations
-        fig.add_trace(go.Scatter(x=timesteps, y=i_hosp_new+i_icu_new, name='hosp_tot', mode='lines', legendgroup='2'), secondary_y=False, row=len(specs), col=1)
-        fig.add_trace(go.Scatter(x=timesteps, y=i_hosp_new, name='hosp', mode='lines', legendgroup='2'), secondary_y=False, row=len(specs), col=1)
-        fig.add_trace(go.Scatter(x=timesteps, y=i_icu_new, name='icu', mode='lines', legendgroup='2'), secondary_y=False, row=len(specs), col=1)
-        fig.add_trace(go.Scatter(x=timesteps, y=d_new, name='deaths', mode='lines', legendgroup='2'), secondary_y=False, row=len(specs), col=1)
-        # make plots for actions
-        for a_i, a in enumerate(('p_w', 'p_s', 'p_l')):
-            fig.add_trace(
-                go.Scatter(x=timesteps, y=actions[:, a_i], name=a, mode='lines', line={'dash': 'dash'}, legendgroup='3'),
-                # layout_yaxis_range=[-0.1,1.1],
-                secondary_y=True, row=len(specs), col=1)
-        fig.update_yaxes(range=[-0.1,1.1], secondary_y=True)
-
-        always_visible = np.arange(len(timestep_plots[0]), len(fig.data))
         # =================
         # INTERACTIVITY
         # =================
         # create separate heatmaps for each transition
+        timestep_plots = [np.arange(len(fig.data))]
         for t_i, transition in enumerate(transitions):
             specs_ = deepcopy(specs)
             nb_plots = len(fig.data)
+
+            states = np.array([t.observation[0] for t in transitions])
+            # add final state
+            states = np.concatenate((states, transitions[-1].next_observation[0][None]), axis=0)
+            ari = (states[:-1,:,0]-states[1:,:,0]).sum(axis=-1)
+            i_hosp_new = states[...,-3].sum(axis=-1)
+            i_icu_new = states[...,-2].sum(axis=-1)
+            d_new = states[...,-1].sum(axis=-1)
+            actions = np.array([t.action for t in transitions])
+            # append action of None
+            actions = np.concatenate((actions, [[None]*3]))
+            
+            timesteps = np.arange(len(states))
+            # make plots for hospitalizations
+            fig.add_trace(go.Scatter(x=timesteps, y=i_hosp_new+i_icu_new, name='hosp_tot', mode='lines', legendgroup='2'), secondary_y=False, row=len(specs), col=1)
+            fig.add_trace(go.Scatter(x=timesteps, y=i_hosp_new, name='hosp', mode='lines', legendgroup='2'), secondary_y=False, row=len(specs), col=1)
+            fig.add_trace(go.Scatter(x=timesteps, y=i_icu_new, name='icu', mode='lines', legendgroup='2'), secondary_y=False, row=len(specs), col=1)
+            fig.add_trace(go.Scatter(x=timesteps, y=d_new, name='deaths', mode='lines', legendgroup='2'), secondary_y=False, row=len(specs), col=1)
+            fig.add_trace(go.Scatter(x=[t_i, t_i], y=[0, 1], mode='lines'), secondary_y=True, row=len(specs), col=1)
+            # make plots for actions
+            for a_i, a in enumerate(('p_w', 'p_s', 'p_l')):
+                fig.add_trace(
+                    go.Scatter(x=timesteps, y=actions[:, a_i], name=a, mode='lines', line={'dash': 'dash'}, legendgroup='3'),
+                    # layout_yaxis_range=[-0.1,1.1],
+                    secondary_y=True, row=len(specs), col=1)
+            fig.update_yaxes(range=[-0.1,1.1], secondary_y=True)
+
             # compute weights for each compartment variable
             obs = transition.observation
             obs = np.concatenate((obs[0].flatten(), obs[1].flatten()))
@@ -291,7 +292,7 @@ def visualize_sdt2(sdt, transitions=None, policy_i=None, with_targets=False):
         for timestep in timestep_plots:
             step = dict(
                 method='update',
-                args=[{'visible': [i in timestep or i in always_visible for i in range(len(fig.data))]}]
+                args=[{'visible': [i in timestep for i in range(len(fig.data))]}]
             )
             slider_steps.append(step)
         # create slider itself
