@@ -4,6 +4,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import cv2
 import numpy as np
+import copy
 import wandb
 
 
@@ -33,18 +34,18 @@ class TodayWrapper(gym.Wrapper):
 
     def reset(self):
         s = super(TodayWrapper, self).reset()
-        ss, se, sa = s
-        return (ss[-1].T, se[-1], sa)
+        sb, ss, se, sa = s
+        return (sb, ss[-1].T, se[-1], sa)
     # step function of covid env returns simulation results of every day of timestep
     # only keep current day
     # also discard first reward
     def step(self, action):
         s, r, d, i = super(TodayWrapper, self).step(action)
-        ss, se, sa = s
+        sb, ss, se, sa = s
         # sum all the social burden objectives together:
         p_tot = r[2:].sum()
         r = np.concatenate((r, p_tot[None]))
-        return (ss[-1].T, se[-1], sa), r, d, i
+        return (sb, ss[-1].T, se[-1], sa), r, d, i
 
 
 class HistoryEnv(gym.Wrapper):
@@ -148,6 +149,7 @@ class CovidModel(nn.Module):
         self.ss_emb = ss_emb
         self.se_emb = se_emb
         self.sa_emb = sa_emb
+        self.sb_emb = copy.deepcopy(sa_emb)
         self.s_emb = nn.Sequential(
             nn.Linear(64, 64),
             nn.SiLU()
@@ -164,11 +166,11 @@ class CovidModel(nn.Module):
         c = torch.cat((desired_return, desired_horizon), dim=-1)
         # commands are scaled by a fixed factor
         c = c*self.scaling_factor
-        ss, se, sa = state
+        sb, ss, se, sa = state
         # concatenate embeddings
         # s = torch.cat((self.ss_emb(ss.float()), self.se_emb(se.float()), self.sa_emb(sa.float())), 1)
         # hadamard product on embeddings
-        s = self.ss_emb(ss.float())*self.se_emb(se.float())*self.sa_emb(sa.float())
+        s = self.ss_emb(ss.float())*self.se_emb(se.float())*self.sa_emb(sa.float())*self.sb_emb(sb.float())
         s = self.s_emb(s)
         c = self.c_emb(c)
         # element-wise multiplication of state-embedding and command
@@ -249,6 +251,7 @@ if __name__ == '__main__':
     parser.add_argument('--noise', default=0.0, type=float, help='noise applied on target-return on batch-update')
     parser.add_argument('--model', default='conv1dsmall', type=str, help='conv1d(big|small), dense(big|small)')
     parser.add_argument('--clip_grad_norm', default=None, type=float, help='clip gradient norm during pcn update')
+    parser.add_argument('--budget', default=None, type=int, help='number of times each action is allowed to change')
     args = parser.parse_args()
     print(args)
 
@@ -256,6 +259,7 @@ if __name__ == '__main__':
 
     env_type = 'ODE' if args.env == 'ode' else 'Binomial'
     n_evaluations = 1 if env_type == 'ODE' else 10
+    budget = f'Budget{args.budget}' if args.budget is not None else ''
     scale = np.array([800000, 11000, 50., 20, 50, 120])
     ref_point = np.array([-15000000, -200000, -1000.0, -1000.0, -1000.0, -1000.0])/scale
     scaling_factor = torch.tensor([[1, 1, 1, 1, 1, 1, 0.1]]).to(device)
@@ -267,7 +271,7 @@ if __name__ == '__main__':
         env = gym.make(f'BECovidWithLockdown{env_type}Discrete-v0')
         nA = env.action_space.n
     else:
-        env = gym.make(f'BECovidWithLockdown{env_type}Continuous-v0')
+        env = gym.make(f'BECovidWithLockdown{env_type}{budget}Continuous-v0')
         if args.action == 'multidiscrete':
             env = multidiscrete_env(env)
             nA = env.action_space.nvec.sum()
