@@ -34,18 +34,27 @@ class TodayWrapper(gym.Wrapper):
 
     def reset(self):
         s = super(TodayWrapper, self).reset()
-        sb, ss, se, sa = s
-        return (sb, ss[-1].T, se[-1], sa)
+        if len(s) == 4:
+            sb, ss, se, sa = s
+            return (sb, ss[-1].T, se[-1], sa)
+        else:
+            ss, se, sa = s
+            return (ss[-1].T, se[-1], sa)
     # step function of covid env returns simulation results of every day of timestep
     # only keep current day
     # also discard first reward
     def step(self, action):
         s, r, d, i = super(TodayWrapper, self).step(action)
-        sb, ss, se, sa = s
         # sum all the social burden objectives together:
         p_tot = r[2:].sum()
         r = np.concatenate((r, p_tot[None]))
-        return (sb, ss[-1].T, se[-1], sa), r, d, i
+        if len(s) == 4:
+            sb, ss, se, sa = s
+            s = (sb, ss[-1].T, se[-1], sa)
+        else:
+            ss, se, sa = s
+            s = (ss[-1].T, se[-1], sa)
+        return s, r, d, i
 
 
 class HistoryEnv(gym.Wrapper):
@@ -141,7 +150,8 @@ class CovidModel(nn.Module):
                  objectives,
                  ss_emb,
                  se_emb,
-                 sa_emb):
+                 sa_emb,
+                 with_budget=False):
         super(CovidModel, self).__init__()
 
         self.scaling_factor = scaling_factor[:,objectives + (len(scaling_factor)-1,)]
@@ -149,7 +159,10 @@ class CovidModel(nn.Module):
         self.ss_emb = ss_emb
         self.se_emb = se_emb
         self.sa_emb = sa_emb
-        self.sb_emb = copy.deepcopy(sa_emb)
+        if with_budget:
+            self.sb_emb = copy.deepcopy(sa_emb)
+        else:
+            self.sb_emb = None
         self.s_emb = nn.Sequential(
             nn.Linear(64, 64),
             nn.SiLU()
@@ -166,11 +179,15 @@ class CovidModel(nn.Module):
         c = torch.cat((desired_return, desired_horizon), dim=-1)
         # commands are scaled by a fixed factor
         c = c*self.scaling_factor
-        sb, ss, se, sa = state
+        if self.sb_emb is not None:
+            sb, ss, se, sa = state
+            s = self.ss_emb(ss.float())*self.se_emb(se.float())*self.sa_emb(sa.float())*self.sb_emb(sb.float())
+        else:
+            ss, se, sa = state
+            s = self.ss_emb(ss.float())*self.se_emb(se.float())*self.sa_emb(sa.float())
         # concatenate embeddings
         # s = torch.cat((self.ss_emb(ss.float()), self.se_emb(se.float()), self.sa_emb(sa.float())), 1)
         # hadamard product on embeddings
-        s = self.ss_emb(ss.float())*self.se_emb(se.float())*self.sa_emb(sa.float())*self.sb_emb(sb.float())
         s = self.s_emb(s)
         c = self.c_emb(c)
         # element-wise multiplication of state-embedding and command
@@ -293,7 +310,8 @@ if __name__ == '__main__':
         ss, se, sa = ss_emb['small'], se_emb['small'], sa_emb['small']
     else:
         raise ValueError(f'unknown model type: {args.model}')
-    model = CovidModel(nA, scaling_factor, tuple(args.objectives), ss, se, sa).to(device)
+    with_budget = args.budget is not None
+    model = CovidModel(nA, scaling_factor, tuple(args.objectives), ss, se, sa, with_budget=with_budget).to(device)
 
     if args.action == 'discrete':
         model = DiscreteHead(model)
