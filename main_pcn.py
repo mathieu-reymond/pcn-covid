@@ -160,9 +160,12 @@ class CovidModel(nn.Module):
         self.se_emb = se_emb
         self.sa_emb = sa_emb
         if with_budget:
+            # sa_emb has 3 inputs (1 per action), same as budget (1 budget per action)
             self.sb_emb = copy.deepcopy(sa_emb)
         else:
-            self.sb_emb = None
+            # otherwise, we include the number of steps left (single int),
+            # se_emb takes a single input as well
+            self.sb_emb = copy.deepcopy(se_emb)
         self.s_emb = nn.Sequential(
             nn.Linear(64, 64),
             nn.SiLU()
@@ -179,12 +182,12 @@ class CovidModel(nn.Module):
         c = torch.cat((desired_return, desired_horizon), dim=-1)
         # commands are scaled by a fixed factor
         c = c*self.scaling_factor
-        if self.sb_emb is not None:
-            sb, ss, se, sa = state
-            s = self.ss_emb(ss.float())*self.se_emb(se.float())*self.sa_emb(sa.float())*self.sb_emb(sb.float())
-        else:
-            ss, se, sa = state
-            s = self.ss_emb(ss.float())*self.se_emb(se.float())*self.sa_emb(sa.float())
+        # if self.sb_emb is not None:
+        sb, ss, se, sa = state
+        s = self.ss_emb(ss.float())*self.se_emb(se.float())*self.sa_emb(sa.float())*self.sb_emb(sb.float())
+        # else:
+        #     ss, se, sa = state
+        #     s = self.ss_emb(ss.float())*self.se_emb(se.float())*self.sa_emb(sa.float())
         # concatenate embeddings
         # s = torch.cat((self.ss_emb(ss.float()), self.se_emb(se.float()), self.sa_emb(sa.float())), 1)
         # hadamard product on embeddings
