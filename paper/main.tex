@@ -7,7 +7,7 @@
 \usepackage{hyperref}       % hyperlinks
 \usepackage{url}            % simple URL typesetting
 \usepackage{booktabs}       % professional-quality tables
-\usepackage{amsmath}
+\usepackage{amsmath,bm}
 \usepackage{amsfonts}       % blackboard math symbols
 \usepackage{nicefrac}       % compact symbols for 1/2, etc.
 \usepackage{microtype}      % microtypography
@@ -31,6 +31,7 @@
 \renewcommand{\cite}[1]{\citep{#1}}
 
 \newcommand{\foi}{\lambda}
+\newcommand\added[1]{\textcolor{blue}{#1}}
 
 %MDP
 %state space
@@ -327,27 +328,38 @@ We consider a contact reduction function that imposes a proportional reduction o
 \end{figure}
 In order to apply multi-objective reinforcement learning, we construct the \momdpname\ MOMDP based on the epidemiological model introduced in Section~\ref{sec:sars-cov2-momdp_model} and graphically depicted in Figure~\ref{fig:ode_mdel}.
 
-\paragraph{State-space:} The state of the MOMDP consists of the state variables that make up the epidemiological model (see Figure~\ref{fig:ode_mdel}), to which we refer as $\mdpstate_m$, together with the social contact matrix $\hat{C}$ that is currently in place.
+\paragraph{Action-space:} Our actions concern the installment of a social contact matrix $\hat{C}$, with a particular reduction (see Section~\ref{sec:interventions}). To this end, we use the proportional reduction parameters $p_w, p_s, p_l$ defined in Section~\ref{sec:interventions}. Thus, each $\mdpaction \in \mdpactionspace$ is a 3-dimensional continuous vector in $[0,1]^3$ (i.e., $\mdpaction = [p_{w}, p_{s}, p_{l}]$) which impacts the SCM according to Equation~\ref{eq:scm}.
+
+\paragraph{Transition function:} The model defined by \citet{abrams2021modelling} utilises a model transition probability $M(\mdpstate_m' \mid \mdpstate_m, \hat{C})$ (see SI for details on $M$), where $\hat{C}$ the currently installed SCM, that progresses the epidemiological model in one timestep.
+We use this function as the transition function in \momdpname.
+For each timestep $t$, we simulate the model for one week, using $\hat{C}$ obtained from $\mdpaction_t$.
+
+As mentioned above and detailed in the SI, the compartment model is described by a set of ODEs. To obtain a stochastic version, the ODEs can be formulated as a chain-binomial process. Based on these cases, we also create and experiment on two versions of the \momdpname\ environment: the (deterministic) \emph{ODE model} (i.e., a MOMDP with a deterministic transition function) and the (stochastic) \emph{Binomial model} (i.e., a MOMDP with a stochastic transition function).
+
+\added{In a classical MDP, executing an action $\action_t$ in any state $\state_t$ leads to a next state $\state_{t+1}$ according to the transition function $\mdptransition$. At every timestep, the policy is free to choose the action to perform. In our case, this corresponds to a different restriction $[p_{w}, p_{s}, p_{l}]$ every week. However, imposing new social restrictions every week does not seem very realistic. It can be frustrating to having to cope with the ever-changing rules. In case of the exit strategy after the lockdown of the first COVID wave in Belgium, the Belgian government executed a progressive plan that consisted of 3 different stages. Each stage resulted in the progressive lessening of social restrictions.}
+
+\added{In order to simulate a more realistic multi-stage exit strategy, we incorporate a \emph{budget per restriction-change} on the MOMDP. Concretely, if the social restriction proposed by the policy is different from the current one in place, we consider this a next stage and reduce our restriction-change budget by one. When the budget reaches 0, we consider the exit strategy to be final, and impose the current social restriction for the remainder of the episode. Finally, we can simulate a no-limit budget setting by setting the budget to the length of the episode.}
+
+\paragraph{State-space:} The state of the MOMDP \added{is a tuple that consists of 3 elements. The first element, $\mdpstate_m$, are the state-variables that make up the epidemiological model (see Figure~\ref{fig:ode_mdel}). They are required to simulate the underlying epidemiological model for a full week.}
+
 $\mdpstate_m$ directly corresponds to the aggregation of the state variables in the epidemiological model, i.e., a tuple,
 \begin{equation}
     \{S_k, E_k, I_k^{presym}, I_k^{asym}, I_k^{mild}, I_k^{sev}, I_k^{hosp}, I_k^{icu}, H^{new}_k, D_k, R_k\},
 \end{equation}
 for each age group $k \in \{1, \ldots, \agegroups\}$, where $S$ encodes the members of the population who are susceptible to infection and $E$ encodes the members of the population who have been exposed to COVID-19. Moreover, $I^{presym}$, $I^{asym}$, $I^{mild}$, $I^{hosp}$, $I^{icu}$ are the members of the population infected with COVID-19 and are, respectively, presymptomatic, asymptomatic, have mild symptoms, are hospitalised, or are in the ICU. Finally, $H^{new}_k$ represents the number of newly hospitalised individuals in age group $k$.
 
+We parameterize the \added{epidemiological} model using the mean of the posteriors as reported by \citet{abrams2021modelling} (details in SI).
+
+\added{The second element of the tuple consists of the social contact matrix $\hat{C}$ that is currently in place. The reason to incorporate it in the state-space is two-fold. First, \citet{abrams2021modelling} define a compliance function, simulating the time people need to get used to the new rules set in place. As such, during the simulated week, there is a gradual shift from the current $\hat{C}$ to the next one. We thus require to know the current $\hat{C}$.}
+
+\added{Secondly, we require the current $\hat{C}$ to determine if we enter a new stage of the multi-stage exit strategy -- and thus consume part of the restriction-change budget -- or not.}
+
+\added{The third and last element of the tuple consists of the restriction-change budget $b$. We note that we incorporate a separate budget per action-dimension, so $p_{w}, p_{s}$ and $p_{l}$ each have their own budget, $b = [b_w, b_s, b_l]$. It is thus possible that, at timestep $t$, the budget for one of the dimensions is reduced but not the others.}
+
 Therefore, we define a state in \momdpname\ as follows:
 \begin{equation}
-    \mdpstate = \mdpstate_m \cup \hat{C}
+    \mdpstate = \mdpstate_m \cup \hat{C} \cup b
 \end{equation}
-
-We paramaterise the model using the mean of the posteriors as reported by \citet{abrams2021modelling} (details in SI).
-
-\paragraph{Action-space:} Our actions concern the installment of a social contact matrix $\hat{C}$, with a particular reduction (see Section~\ref{sec:interventions}). To this end, we use the proportional reduction parameters $p_w, p_s, p_l$ defined in Section~\ref{sec:interventions}. Thus, each $\mdpaction \in \mdpactionspace$ is a 3-dimensional continuous vector in $[0,1]^3$ (i.e., $\mdpaction = [p_{w}, p_{s}, p_{l}]$) which impacts the SCM according to Equation~\ref{eq:scm}.
-
-\paragraph{Transition function:} The model defined by \citet{abrams2021modelling} utilises a model transition probability $M(\mdpstate_m' \mid \mdpstate_m, \hat{C})$ (see SI for details on $M$), where $\hat{C}$ the currently installed SCM, that progresses the epidemiological model in one timestep.
-We use this function as the transition function in \momdpname.
-For each timestep $t$, we simulate the model for one week, using $\hat{C}$ obtained from $\mdpaction_t$. 
-
-As mentioned above and detailed in the SI, the compartment model is described by a set of ODEs. To obtain a stochastic version, the ODEs can be formulated as a chain-binomial process. Based on these cases, we also create and experiment on two versions of the \momdpname\ environment: the (deterministic) \emph{ODE model} (i.e., a MOMDP with a deterministic transition function) and the (stochastic) \emph{Binomial model} (i.e., a MOMDP with a stochastic transition function).
 
 \paragraph{Reward function:} We define a vector reward function which considers multiple objectives: attack rate (i.e., infections, hospitalisations) and the burden imposed by the interventions on the population.
 
@@ -374,18 +386,47 @@ where $S_k(\mdpstate)$ represents the number of susceptible individuals in age g
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Pareto Conditioned Networks}
-In multi-objective optimization, the set of optimal policies can grow exponentially in the number of objectives. Thus, recovering them all is an expensive process and requires an exhaustive exploration of the complete state space. To address this problem, we use Pareto Conditioned Networks~(PCN), a method that uses a single neural network to encompass all non-dominated
-policies \cite{reymond2022pcn}. The key idea behind PCN is to use supervised learning techniques to improve the policy instead of resorting to temporal-difference learning. This eliminates the moving-target problem \cite{schmidhuber2019}, resulting in stable learning algorithm.
+In multi-objective optimization, the set of optimal policies can grow exponentially in the number of objectives. Thus, recovering them all is an expensive process and requires an exhaustive exploration of the complete state space. To address this problem, we use Pareto Conditioned Networks~(PCN), a method that uses a single neural network to encompass all non-dominated policies \cite{reymond2022pcn}. The key idea behind PCN is to use supervised learning techniques to improve the policy instead of resorting to temporal-difference learning. % This eliminates the moving-target problem \cite{schmidhuber2019}, resulting in stable learning algorithm.
+
+\added{TODO REPHRASE, FROM PCN PAPER: Using neural networks as function approximators in RL comes with many challenges. One of them is that the target (e.g., the optimal action of the policy) is not known in advance --- as opposed to classical supervised learning where the ground-truth target is provided. As the behavior of the agent improves over time, the action used as target can change, often leading to hard-to-tune and brittle learners \cite{mnih2015,fu2019}.}
+
+\added{Instead of trying to continuously improve the policy by learning actions that should lead to the highest cumulative reward, PCN flips the problem, by learning actions that should lead to any \emph{desired} cumulative reward (be it high or low). In this way, all past trajectories can be reused for supervision, since their returns are known, as well as the actions needed to reach said returns. We can thus train a policy that, conditioned on a desired return, provides the optimal action to reach said return. By leveraging the generalization properties of neural networks, we can accumulate incrementally better experience by conditioning on increasingly higher reward-goals}
 
 PCN uses a single neural network that takes a tuple $\langle \mdpstate, \hat{h}, \mathbf{\hat{R}}  \rangle$ as input. $\mathbf{\hat{R}}$ represents the \emph{desired return} of the decision maker, i.e. the return PCN should reach at the end of the episode. $\hat{h}$ denotes the \emph{desired horizon} that expresses the number of timesteps that should be executed before reaching $\mathbf{\hat{R}}$. At execution time, both $\hat{h}$ and $\mathbf{\hat{R}}$ are chosen by the decision maker at the start of the episode. Then, at every timestep, the desired horizon is updated according to the perceived reward $\mdpreward_t$, $\mathbf{\hat{R}} \leftarrow \mathbf{\hat{R}} - \mdpreward_t$ and the desired horizon is decreased by one, $\hat{h} \leftarrow \hat{h}-1$.
 
 PCN's neural network has an output for each action $\action_i \in \mathcal{A}$. Each output represents the confidence the network has that, by taking the corresponding action in $\mdpstate$, $\mathbf{\hat{R}}$ will be reached in $\hat{h}$ timesteps. We can draw an analogy with a classification problem where the network should learn to classify $(\mdpstate, \hat{h}, \mathbf{\hat{R}})$ to its corresponding label $\action_i$.
 
-Similar to classification, PCN requires a labeled dataset with training examples to learn a mapping from input to label. However, contrary to classification, the data present in the dataset is not fixed. Each time PCN executes a trajectory it creates a tuple $x=(\mdpstate_t, \momdpreturn_t, T-t)$, $y=\action_t$ for every transition of the trajectory and adds it to the dataset.
+Similar to classification, PCN requires a labeled dataset with training examples to learn a mapping from input to label. However, contrary to classification, the data present in the dataset is not fixed. \added{PCN collects data from the trajectories experienced while exploring the environment. Thus, the dataset improves over time, as we collect better and better trajectories.}
 
-PCN collects new data for a fixed number of episodes, after which it re-trains the network with batch updates from the newly assembled dataset. This improves the policies induced by the network, which in turn enables the agent to gather superior data for the next training batch.
+\added{Concretely, the PCN algorithm is a loop that repeats 3 main steps:
+\begin{enumerate}
+    \item Using the current policy to interact with the environment and generate trajectories
+    \item Update and prune the dataset to incorporate these new trajectories and remove the least interesting trajectories in terms of returns
+    \item Update the policy by training it on the updated dataset
+\end{enumerate}
+}
 
-\subsection{PCN for continuous actions}
+\subsection{Building and updating the dataset}
+\label{sec:pcn-building-dataset}
+
+\added{Given a trajectory composed of $T$ transitions $(s_0, a_0, \bm{r}_0, s_1), \dots, (s_{T-1}, a_{T-1}, \bm{r}_{T-1}, s_T)$ we can compute, for each transition at timestep $t$, the future discounted return $\bm{R}_t = \sum_{i=t}^T \gamma^i\bm{r}_i$ and the leftover horizon $h_t = T-t$. Since for this trajectory executing action $a_t$ in state $s_t$ resulted in return $\mathbf{R}_t$ in $h_t$ timesteps, we add a datapoint with input $\langle s, \hat{h}, \mathbf{\hat{R}}\rangle = \langle s_t, h_t, \mathbf{R}_t \rangle$ and output $a=a_t$ to the dataset. In other words, when the observed return corresponds to the desired return in that state, then $a_t$ is the optimal action to take.}
+
+\added{Since we have a fix-sized dataset, adding this trajectory means we need to remove another one. Our aim is to keep trajectories that span different parts of the objective space, such that we can explore as many types of trade-offs as possible. However, to improve the trade-offs we currently have in our dataset, we need to only keep solutions that are close to our current estimate of the Pareto front. Thus, we assign a priority for each trajectory in our dataset that combine two metrics: the \emph{crowding distance}, which measures the distance of a solution with its closest neighbors, and the \emph{l2-norm} with the closest non-dominated solution, which indicates how close the solution is from our current estimate of the Pareto front.}
+
+\added{The dataset is then updated by only keeping the trajectories with the top-$N$ priorities.}
+
+\subsection{Generating trajectories with the current policy}
+\label{sec:pcn-policy-exploration}
+
+\added{In the previous section, we explain how PCN updates the dataset given a trajectory. In this section, we explain how PCN produces said trajectory.}
+
+\added{It is unrealistic to expect PCN to reliably produce trajectories with high-valued desired returns when it has only been trained on datapoints originating from random trajectories. Rather, we can expect PCN to produce trajectories with returns in the range of the ones from the current training data. Therefore, if we obtain trajectories reaching high returns, PCN will be able to confidently return high-return policies.}
+
+\added{PCN leverages the fact that, due to the generalization capabilities of neural networks, the policies obtained from the network will still be reliable even if the desired return is marginally higher than what is present in the training data. In fact, they will perform similar actions to those in the training data, but lead to a higher return. Thus, we incrementally condition the network on better and better returns, in order to obtain trajectories that extend the boundaries of PCN's current coverage set.}
+
+\added{More precisely, we randomly select a non-dominated return $\mathbf{R}_{nd}$ and its corresponding horizon $\hat{h}$ from the dataset. By randomly picking a non-dominated return from the entire coverage set we ensure equal chance of improvement to each part of the objective space. To generate trajectories that improve upon $\mathbf{R}_{nd}$, we randomly select an objective $o$ and increase $R_{nd,o}$ by a sample from the uniform distribution $U(0, \sigma_o)$, where $\sigma_o$ is the standard deviation for the selected objective, using all non-dominated returns from the trajectories in the dataset. This then becomes our desired return $\bm{\hat{R}}$. By restricting the improvement to at most $\sigma_o$, $\mathbf{\hat{R}}$ stays in the range of possible achievable returns and, by only modifying one objective at a time, the changes to the network's input compared to the training data are kept at a minimum.}
+
+\subsection{Training the network for continuous actions}
 \label{sec:pcn-continuous}
 
 PCN trains the network as a classification problem, where each class represents a different action. Transitions $x= \langle \mdpstate_t, h_t, \momdpreturn_t \rangle, y=\action_t$ are sampled from the dataset, and the ground-truth output $y$ is compared with the predicted output $\hat{y}=\pi(\mdpstate_t, h_t, \momdpreturn_t)$. The predictor (i.e., the policy) is then updated using the cross-entropy loss function:
@@ -725,9 +766,125 @@ In Figure~\ref{fig:pareto-front-arh}, we display the coverage set with respect t
 
 \begin{figure}[h]
     \centering
+    \input{fig_budget}
+    \caption{The Pareto front of policies discovered by PCN, showing the different compromises between the number of hospitalizations and the number of lost contacts. Although $\text{PCN}_\text{ARI}$ was trained on the number of infections, it still shows a competitive coverage set w.r.t. hospitalizations.}
+    \label{fig:pareto-front-arh}
+\end{figure}
+
+
+\begin{figure}[h]
+    \centering
+    \input{fig_budget_binomial}
+    \caption{The Pareto front of policies discovered by PCN, showing the different compromises between the number of hospitalizations and the number of lost contacts. Although $\text{PCN}_\text{ARI}$ was trained on the number of infections, it still shows a competitive coverage set w.r.t. hospitalizations.}
+    \label{fig:pareto-front-arh}
+\end{figure}
+
+
+\begin{figure}[h]
+    \centering
     \input{fig_arh}
     \caption{The Pareto front of policies discovered by PCN, showing the different compromises between the number of hospitalizations and the number of lost contacts. Although $\text{PCN}_\text{ARI}$ was trained on the number of infections, it still shows a competitive coverage set w.r.t. hospitalizations.}
     \label{fig:pareto-front-arh}
+\end{figure}
+
+\begin{figure}[h]
+    \centering
+\begin{tikzpicture}
+    \pgfplotsset{
+        scale only axis,
+        height=6cm,
+        xlabel={total number of daily new hospitalizations},
+        ylabel={total lost contacts}
+    }
+    \begin{axis}[
+    legend entries={{Budget 2 (ODE)}, {Budget 2 (Binomial)}, {Fixed}},
+    width=9.5cm
+    ]
+    \addplot[only marks,draw opacity=0.5,mark=x,red] table [x=o_1, y=o_5, col sep=comma] {data/cs/budget/budget_2.csv};
+    \addplot[only marks,draw opacity=0.5,mark=o,blue] table [x=o_1, y=o_5, col sep=comma] {data/cs/budget/binomial/budget_2.csv};
+    \addplot[only marks,mark=+] table [x=o_0, y=o_1, col sep=comma] {data/cs/cs_fixed.csv};
+    \end{axis}
+\end{tikzpicture}
+\end{figure}
+
+\begin{figure}[h]
+    \centering
+\begin{tikzpicture}
+    \pgfplotsset{
+        scale only axis,
+        height=6cm,
+        xlabel={total number of daily new hospitalizations},
+        ylabel={total lost contacts}
+    }
+    \begin{axis}[
+    legend entries={{Budget 3 (ODE)}, {Budget 3 (Binomial)}, {Fixed}},
+    width=9.5cm
+    ]
+    \addplot[only marks,draw opacity=0.5,mark=x,red] table [x=o_1, y=o_5, col sep=comma] {data/cs/budget/budget_3.csv};
+    \addplot[only marks,draw opacity=0.5,mark=o,blue] table [x=o_1, y=o_5, col sep=comma] {data/cs/budget/binomial/budget_3.csv};
+    \addplot[only marks,mark=+] table [x=o_0, y=o_1, col sep=comma] {data/cs/cs_fixed.csv};
+    \end{axis}
+\end{tikzpicture}
+\end{figure}
+
+\begin{figure}[h]
+    \centering
+\begin{tikzpicture}
+    \pgfplotsset{
+        scale only axis,
+        height=6cm,
+        xlabel={total number of daily new hospitalizations},
+        ylabel={total lost contacts}
+    }
+    \begin{axis}[
+    legend entries={{Budget 4 (ODE)}, {Budget 4 (Binomial)}, {Fixed}},
+    width=9.5cm
+    ]
+    \addplot[only marks,draw opacity=0.5,mark=x,red] table [x=o_1, y=o_5, col sep=comma] {data/cs/budget/budget_4.csv};
+    \addplot[only marks,draw opacity=0.5,mark=o,blue] table [x=o_1, y=o_5, col sep=comma] {data/cs/budget/binomial/budget_4.csv};
+    \addplot[only marks,mark=+] table [x=o_0, y=o_1, col sep=comma] {data/cs/cs_fixed.csv};
+    \end{axis}
+\end{tikzpicture}
+\end{figure}
+
+\begin{figure}[h]
+    \centering
+\begin{tikzpicture}
+    \pgfplotsset{
+        scale only axis,
+        height=6cm,
+        xlabel={total number of daily new hospitalizations},
+        ylabel={total lost contacts}
+    }
+    \begin{axis}[
+    legend entries={{Budget 5 (ODE)}, {Budget 5 (Binomial)}, {Fixed}},
+    width=9.5cm
+    ]
+    \addplot[only marks,draw opacity=0.5,mark=x,red] table [x=o_1, y=o_5, col sep=comma] {data/cs/budget/budget_5.csv};
+    \addplot[only marks,draw opacity=0.5,mark=o,blue] table [x=o_1, y=o_5, col sep=comma] {data/cs/budget/binomial/budget_5.csv};
+    \addplot[only marks,mark=+] table [x=o_0, y=o_1, col sep=comma] {data/cs/cs_fixed.csv};
+    \end{axis}
+\end{tikzpicture}
+\end{figure}
+
+\begin{figure}[h]
+    \centering
+\begin{tikzpicture}
+    \pgfplotsset{
+        scale only axis,
+        height=6cm,
+        xlabel={total number of daily new hospitalizations},
+        ylabel={total lost contacts}
+    }
+    \begin{axis}[
+    legend entries={{Budget N (ODE)}, {Budget N (Binomial)}, {Fixed}},
+    width=9.5cm
+    ]
+    \addplot[only marks,draw opacity=0.5,mark=x,red] table [x=o_1, y=o_5, col sep=comma] {data/cs/budget/budget_None.csv};
+    \addplot[only marks,draw opacity=0.5,mark=o,blue] table [x=o_1, y=o_5, col sep=comma] {data/cs/budget/binomial/budget_None.csv};
+    \addplot[only marks,mark=+] table [x=o_0, y=o_1, col sep=comma] {data/cs/cs_fixed.csv};
+    \end{axis}
+\end{tikzpicture}
 \end{figure}
 
 Moreover, we also show the coverage sets with respect to the number of infections in Figure~\ref{fig:pareto-front-ari}. Interestingly, both variants trained on the Binomial model learn a coverage set that almost completely dominates the variants trained on the ODE model. This is due to the stochasticity of the Binomial model. PCN stores trajectories in its dataset, and keep a selection for training. Due to the stochasticity in the transition function, some trajectories might result in higher returns, even though the same policy was applied. Due to the high variability in infections, this difference might become significant. This is also why the variants using the Binomial model show a worse $I_{\varepsilon}$ and $I_{\varepsilon}-mean$ than their ODE counterpart: their desired return stems from a single trajectory, while we evaluate the policies over multiple trajectories. The resulting average return is then different than the desired return. Section~\ref{sec:arh-vs-ari} explains why some policies trained on $\mathbf{R}_{\text{ARH}}$ show suboptimal behavior with respect to the number of infections.

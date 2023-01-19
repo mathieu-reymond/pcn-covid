@@ -12,6 +12,17 @@ import pandas as pd
 pre = sys.argv[1]
 
 
+def baseline_runs(logdir):
+    with open(Path(logdir) / 'returns.pkl', 'rb') as f:
+        import pickle
+        pf = pickle.load(f)
+        pf = np.mean(pf, axis=1)
+        pf = non_dominated(pf)
+    return [{
+        'pareto_front': pf,
+        'hypervolume': []
+    }]
+
 def udrl_runs(logdir):
     runs = []
     for i, path in enumerate(Path(logdir).rglob('log.h5')):
@@ -19,6 +30,7 @@ def udrl_runs(logdir):
         with h5py.File(path, 'r') as logfile:
             pf = logfile['train/leaves/ndarray']
             try:
+                raise KeyError()
                 hv = logfile['train/hypervolume']
             except KeyError:
                 # recompute hypervolume
@@ -33,7 +45,8 @@ def udrl_runs(logdir):
                     'walkroom8':np.array([-10.0]*8),
                     'walkroom9':np.array([-10.0]*9),
                     'ode':np.array([-50000, -2000.0])/np.array([10000, 100.]),
-                    'binomial':np.array([-50000, -2000.0])/np.array([10000, 100.])
+                    'binomial':np.array([-50000, -2000.0])/np.array([10000, 100.]),
+                    # 'binomial':np.array([-50000, -2000.0, -2000.0, -2000.0])/np.array([10000, 50., 50, 50])
                 }
                 for rp in ref_points.keys():
                     if rp in logdir:
@@ -49,11 +62,11 @@ def udrl_runs(logdir):
                 steps = logfile['train/leaves/step']
                 hv = np.stack((steps, hv), axis=1)
             # best points found over training
-            bp = non_dominated(np.concatenate(pf, axis=0))
+            # bp = non_dominated(np.concatenate(pf, axis=0))
             run = {
                 'pareto_front': pf[-1],
                 'hypervolume': hv[:],
-                'best_points': bp
+                # 'best_points': bp
             }
             runs.append(run)
     return runs
@@ -103,18 +116,23 @@ def show_pareto_front(all_runs):
             plt.gca().scatter(*[pf[:,j] for j in range(pf.shape[1])], c=weights, vmin=-1, vmax=len(runs)+1, cmap=cmaps[k])
     plt.show()
 
-
+from itertools import combinations
 def plot_pareto_front(all_runs, jitter=0.01):
     plt.figure()
+    # comb = [c for c in combinations(range(4), 2)]
+    # comb = [(0, i) for i in range(1, 5)]
+    # labels = ['new hosp', 'p_w', 'p_s', 'p_l', 'p_all']
+    # plt.subplots(len(comb)//2, 2)
     plt.title('pareto front')
 
+
     nO = list(all_runs.values())[0][0]['pareto_front'].shape[-1]
-    if nO == 3:
-        plt.gcf().add_subplot(111, projection='3d')
-    elif nO > 3:
-        print('aborting since more than 3 objectives')
-        plt.close()
-        return
+    # if nO == 3:
+    #     plt.gcf().add_subplot(111, projection='3d')
+    # elif nO > 3:
+    #     print('aborting since more than 3 objectives')
+    #     plt.close()
+    #     return
 
     for k, v in all_runs.items():
         points = [run['pareto_front'] for run in v]
@@ -126,7 +144,26 @@ def plot_pareto_front(all_runs, jitter=0.01):
         print(p)
         jittered_p = p # + np.random.normal(0, p.std(axis=0, keepdims=True)*jitter, size=p.shape)
         coords = list(zip(*jittered_p))
+        # coords = np.array(coords)*np.array([[10000], [50],[50],[50]])
         coords = np.array(coords)*np.array([[10000], [100]])
+        coords = non_dominated(coords.T).T
+        # coords = np.concatenate((coords, coords[1:].sum(0, keepdims=True)), axis=0)
+        # axs = plt.gcf().axes
+        # for ax, c in zip(axs, comb):
+        #     ax.scatter(coords[c[0]], coords[c[1]], alpha=0.2, label=f'{k}')
+        #     ax.set_xlabel(labels[c[0]])
+        #     ax.set_ylabel(labels[c[1]])
+
+        
+        # coords = np.array(coords)
+        # if coords.shape[0] > 2:
+        #     coords = np.array(coords)*np.array([[10000], [50],[50],[50]])
+        #     coords = np.stack((coords[0], coords[1:].sum(0)), axis=0)
+        # else:
+        #     coords = np.array(coords)*np.array([[10000], [100]])
+
+        # coords = non_dominated(coords.T).T
+
         plt.gca().scatter(*coords, alpha=0.2, label=f'{k}')
         plt.xlabel('total number of daily-new-hospitalizations')
         plt.ylabel('social burden as cumulative contacts lost per person')
@@ -239,11 +276,16 @@ if __name__ == '__main__':
     for algo, logdir in zip(args.algo, args.logs):
         if algo.startswith('udrl'):
             get_runs = udrl_runs
+        elif algo.startswith('baseline'):
+            get_runs = baseline_runs
         else:
             raise ValueError('unknown algo')
-        runs = get_runs(logdir)
-
-        all_runs[algo] = runs
+        try:
+            runs = get_runs(logdir)
+            all_runs[algo] = runs
+        except:
+            print(f'skipped {logdir}')
+            continue
 
     if args.save_pf is not None:
         try:
@@ -259,7 +301,7 @@ if __name__ == '__main__':
             with open(args.save_pf + '.npy', 'wb') as f:
                 np.save(f, nd)
     else:
-        nd = non_dominated_across_runs(all_runs)
+        # nd = non_dominated_across_runs(all_runs)
         warnings.warn('not using approximated pareto front')
 
     plot_pareto_front(all_runs)
