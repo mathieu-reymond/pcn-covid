@@ -23,6 +23,7 @@
 \usepackage{chngcntr}       % counters per section
 \usepackage{tikz}
 \usepackage{pgfplots}
+\usepackage{comment}
 \usepgfplotslibrary{dateplot, groupplots}
 \pgfplotsset{compat=newest}
 \usepackage{plotpolicies}   % custom package to plot policy-executions
@@ -83,6 +84,16 @@
 \newcommand{\momdpname}{MOBelCov}
 %other params
 \newcommand{\agegroups}{K}
+
+
+% color scheme for plots: plot-color-i
+\definecolor{pc1}{RGB}{76, 120, 168}
+\definecolor{pc2}{RGB}{245, 133, 24}
+\definecolor{pc3}{RGB}{228, 87, 88}
+\definecolor{pc4}{RGB}{114, 183, 178}
+\definecolor{pc5}{RGB}{84, 162, 75}
+\definecolor{pc6}{RGB}{238, 202, 59}
+\definecolor{pc7}{RGB}{178, 121, 162}
 
 
 \title{Exploring the Pareto front of multi-objective COVID-19 mitigation policies using reinforcement learning}
@@ -470,6 +481,11 @@ All experiments are averaged over 5 runs. The hyper-parameters and the neural ne
 
 \begin{figure}
     \centering
+    \input{fig/arh.tex}
+\end{figure}
+
+\begin{figure}
+    \centering
     \begin{tikzpicture}
         \pgfplotsset{
           scale only axis,
@@ -572,7 +588,7 @@ To conclude, we show that multi-objective reinforcement learning can be used to 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+\begin{comment}
 \appendix
 \counterwithin{figure}{section}
 \counterwithin{table}{section}
@@ -988,5 +1004,5 @@ All the architectures of the different components are displayed in Table~\ref{ta
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Related Work}
 RL has also been used to learn effective mitigation strategies which limit the spread of COVID-19 \cite{ohi2020exploring}. Kwak et al. \cite{kwak2021covid} use deep RL, with an SIRD model, to learn efficacy of lockdown and travel restrictions in controlling the COVID-19 pandemic using data collected from various government organisations.  Bastani et al. \cite{bastani2021efficient} use a RL algorithm called Eva to limit the influx of asymptomatic travellers infected with SARS-CoV-2 to Greece. Kompella et al. \cite{kompella2020reinforcement} define a COVID-19 simulator and a methodology to learn mitigation policies that minimize the economic impact without overwhelming the hospital capacity. RL has also been used to learn effective COVID-19 vaccination distribution strategies \cite{beigi2021application,awasthi2020vacsim} and to create decision support systems for mitigating the spread of COVID-19.
-
+\end{comment}
 \end{document}
