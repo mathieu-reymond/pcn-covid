@@ -496,11 +496,19 @@ We notice that the coverage sets discovered by PCN almost completely dominate th
 Interestingly, we notice that the most restrictive policy (i.e. the one that prioritizes hospitalizations over social burden, see Figure~\ref{fig:policy-execution}, bottom plot) still starts to gradually increase $p_w$ and $p_l$ from the end of July onward. This is because by then, the epidemic has mostly faded out, and it is safe to reduce social restrictions. The timing of this reduction is important as reducing restrictions too soon can lead to a new wave. PCN learns the impact of its decisions over time, and correctly infers the timing at which restrictions can be safely lifted.
 
 \begin{figure}
-  \centering
-  \input{fig_policy-execution}
-  \caption{Selection of policies learned by PCN, from most restrictive in terms of social burden (top) to least restrictive (bottom).
-  }
-  \label{fig:policy-execution}
+    \centering
+    \input{fig/budget_5}
+    \caption{Selection of policies learned by PCN, from most restrictive in terms of social burden (top) to least restrictive (bottom).
+    }
+    \label{fig:policy-execution}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \input{fig/all_budgets}
+    \caption{Selection of policies learned by PCN, from most restrictive in terms of social burden (top) to least restrictive (bottom).
+    }
+    \label{fig:policy-execution}
 \end{figure}
 
 \subsection{ODE versus Binomial models}
