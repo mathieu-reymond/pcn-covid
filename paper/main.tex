@@ -482,33 +482,10 @@ All experiments are averaged over 5 runs. The hyper-parameters and the neural ne
 \begin{figure}
     \centering
     \input{fig/arh.tex}
-\end{figure}
-
-\begin{figure}
-    \centering
-    \begin{tikzpicture}
-        \pgfplotsset{
-          scale only axis,
-          height=6cm,
-          xlabel={Cumulative number of daily new hospitalizations},
-          ylabel={Cumulative lost contacts}
-        }
-      \begin{axis}[
-        legend entries={{$\text{PCN}_\text{ARH}$ (ODE)}, {$\text{PCN}_\text{ARI}$ (ODE)}, {Fixed}},
-        width=9.5cm
-      ]
-      %\addplot[only marks,draw opacity=0.5,mark=x,green] table [x=o_0, y=o_1, col sep=comma] {data/cs/cs_ode.csv};
-      \addplot[only marks,draw opacity=0.5,mark=x,red] table [x=o_1, y=o_5, col sep=comma] {data/cs/arh/cs_ode.csv};
-      \addplot[only marks,draw opacity=0.5,mark=o,blue] table [x=o_1, y=o_5, col sep=comma] {data/cs/ari/cs_ode.csv};
-      %\addplot[only marks,mark=o,yellow] table [x=o_0, y=o_1, col sep=comma] {data/cs/cs_binomial.csv};
-      %\addplot[only marks,draw opacity=0.5,mark=o,blue] table [x=o_1, y=o_5, col sep=comma] {data/cs/arh/cs_binomial.csv};
-      %\addplot[only marks,draw opacity=0.5,mark=diamond,cyan] table [x=o_1, y=o_5, col sep=comma] {data/cs/ari/cs_binomial.csv};
-      \addplot[only marks,mark=+] table [x=o_0, y=o_1, col sep=comma] {data/cs/cs_fixed.csv};
-      \end{axis}
-    \end{tikzpicture}
     \caption{The Pareto front of policies discovered by PCN using the ODE model (Binomial omitted for clarity, see SI), showing the different compromises between the number of hospitalizations and the number of lost contacts. Although $\text{PCN}_\text{ARI}$ was trained on the number of infections, it still shows a competitive coverage set with respect to hospitalizations.}
     \label{fig:pareto-front}
 \end{figure}
+
 
 \subsection{Learned coverage set}
 
