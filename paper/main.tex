@@ -421,13 +421,13 @@ PCN uses a single neural network that takes a tuple $\langle \mdpstate, \hat{h},
 
 PCN's neural network has an output for each action $\action_i \in \mathcal{A}$. Each output represents the confidence the network has that, by taking the corresponding action in $\mdpstate$, $\mathbf{\hat{R}}$ will be reached in $\hat{h}$ timesteps. We can draw an analogy with a classification problem where the network should learn to classify $(\mdpstate, \hat{h}, \mathbf{\hat{R}})$ to its corresponding label $\action_i$.
 
-Similar to classification, PCN requires a labeled dataset with training examples to learn a mapping from input to label. However, contrary to classification, the data present in the dataset is not fixed. \added{PCN collects data from the trajectories experienced while exploring the environment. Thus, the dataset improves over time, as we collect better and better trajectories.}
+Similar to classification, PCN requires a labeled dataset with training examples to learn a mapping from input to label. However, contrary to classification, the data present in the dataset is not fixed. \added{PCN collects data from the trajectories experienced while exploring the environment. Thus, the dataset improves over time, as we collect increasingly better trajectories.}
 
-\added{Concretely, the PCN algorithm is a loop that repeats 3 main steps:
+\added{Concretely, the PCN algorithm is a loop that repeatedly executes 3 main steps:
 \begin{enumerate}
-    \item Using the current policy to interact with the environment and generate trajectories
-    \item Update and prune the dataset to incorporate these new trajectories and remove the least interesting trajectories in terms of returns
-    \item Update the policy by training it on the updated dataset
+    \item Use the current policy to interact with the environment and generate trajectories (see Section~\ref{sec:pcn-policy-exploration}).
+    \item Update the dataset to incorporate these new trajectories and prun the least interesting trajectories in terms of returns (see Section~\ref{sec:pcn-building-dataset}).
+    \item Update the policy by training it on the updated dataset (see Section~\ref{sec:pcn-continuous}).
 \end{enumerate}
 }
 
