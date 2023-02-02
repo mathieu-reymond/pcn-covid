@@ -85,6 +85,7 @@
 \newcommand{\momdpname}{MOBelCov}
 %other params
 \newcommand{\agegroups}{K}
+\newcommand{\budget}{\bm{b}}
 
 
 % color scheme for plots: plot-color-i
@@ -307,8 +308,8 @@ By formulating this set of differential equations a chain-binomial process (as d
 
 \subsection{Interventions strategies}
 \label{sec:interventions}
-In order to model different types of interventions, we follow \citet{abrams2021modelling}. Firstly, in order to consider distinct exit scenarios, we alter the SCMs to reflect a contact reduction in a particular age group. Secondly, we assume that compliance to the interventions is gradual and model this using a logistic compliance function (see details in SI).
-We consider a contact reduction function that imposes a proportional reduction of work (including transport) $p_w$, school $p_s$ and leisure $p_l$ contacts, which is implemented as a linear combination of contact matrices:
+In order to model different types of interventions, we follow \citet{abrams2021modelling}. Firstly, in order to consider distinct exit scenarios, we modulate the SCMs to reflect a contact reduction in a particular age group. Secondly, we assume that compliance to the interventions is gradual and model this using a logistic compliance function (see details in SI).
+We consider a contact reduction function that imposes a proportional reduction of work (including transport) $p_w$, school $p_s$ and leisure $p_l$ contacts, which is implemented as a linear combination of SCMs:
 \begin{equation}
 \label{eq:scm}
     \hat{C} = \chome + p_w (\cwork + \ctransport) + p_s \cschool + p_l (\cleisure + \cother)
@@ -356,50 +357,50 @@ In order to apply multi-objective reinforcement learning, we construct the \momd
 
 \paragraph{Transition function:} The model defined by \citet{abrams2021modelling} utilises a model transition probability $M(\mdpstate_m' \mid \mdpstate_m, \hat{C})$ (see SI for details on $M$), where $\hat{C}$ the currently installed SCM, that progresses the epidemiological model in one timestep.
 We use this function as the transition function in \momdpname.
-For each timestep $t$, we simulate the model for one week, using $\hat{C}$ obtained from $\mdpaction_t$.
 
-As mentioned above and detailed in the SI, the compartment model is described by a set of ODEs. To obtain a stochastic version, the ODEs can be formulated as a chain-binomial process. Based on these cases, we also create and experiment on two versions of the \momdpname\ environment: the (deterministic) \emph{ODE model} (i.e., a MOMDP with a deterministic transition function) and the (stochastic) \emph{Binomial model} (i.e., a MOMDP with a stochastic transition function).
+\added{In a classical MDP, executing an action $\action_t$ in any state $\state_t$ leads to a next state $\state_{t+1}$ according to the transition function $\mdptransition$. At every timestep $t$, the policy is free to choose the action to perform. In our case, this potentially results in a different restriction $[p_{w}, p_{s}, p_{l}]$ every week. However, we argue that in the context of mitigation policies, consistency is key, and policies that impose changes too frequently will be hard to follow.}
 
-\added{In a classical MDP, executing an action $\action_t$ in any state $\state_t$ leads to a next state $\state_{t+1}$ according to the transition function $\mdptransition$. At every timestep, the policy is free to choose the action to perform. In our case, this corresponds to a different restriction $[p_{w}, p_{s}, p_{l}]$ every week. However, imposing new social restrictions every week does not seem very realistic. It can be frustrating to having to cope with the ever-changing rules. In case of the exit strategy after the lockdown of the first COVID wave in Belgium, the Belgian government executed a progressive plan that consisted of 3 different stages. Each stage resulted in the progressive lessening of social restrictions.}
+\added{In order to learn realistic and consistent mitigation policies, we incorporate a \emph{budget} on the number of times a policy can change its actions until the terminal state of the MOMDP. Concretely, when the action changes, i.e., if the social restriction proposed by the policy is different from the current one in place, we reduce the budget by one. We only allow action changes as long as there is budget left. We note that we can simulate a no-limit budget setting by setting the budget to the length of the episode.}
 
-\added{In order to simulate a more realistic multi-stage exit strategy, we incorporate a \emph{budget per restriction-change} on the MOMDP. Concretely, if the social restriction proposed by the policy is different from the current one in place, we consider this a next stage and reduce our restriction-change budget by one. When the budget reaches 0, we consider the exit strategy to be final, and impose the current social restriction for the remainder of the episode. Finally, we can simulate a no-limit budget setting by setting the budget to the length of the episode.}
+Finally, for each timestep $t$, our transition function $\mdptransition$ uses the model transition probability $M$ to simulate the model for one week, using $\hat{C}$ obtained from $\mdpaction_t$.
 
-\paragraph{State-space:} The state of the MOMDP \added{is a tuple that consists of 3 elements. The first element, $\mdpstate_m$, are the state-variables that make up the epidemiological model (see Figure~\ref{fig:ode_mdel}). They are required to simulate the underlying epidemiological model for a full week.}
+% As mentioned above and detailed in the SI, the compartment model is described by a set of ODEs. To obtain a stochastic version, the ODEs can be formulated as a chain-binomial process. Based on these cases, we also create and experiment on two versions of the \momdpname\ environment: the (deterministic) \emph{ODE model} (i.e., a MOMDP with a deterministic transition function) and the (stochastic) \emph{Binomial model} (i.e., a MOMDP with a stochastic transition function).
 
-$\mdpstate_m$ directly corresponds to the aggregation of the state variables in the epidemiological model, i.e., a tuple,
+\paragraph{State-space:} The state of the MOMDP \added{concerns a 3-tuple. The first element,} $\mdpstate_m$, directly corresponds to the aggregation of the state variables in the epidemiological model, i.e., a tuple,
 \begin{equation}
     \{S_k, E_k, I_k^{presym}, I_k^{asym}, I_k^{mild}, I_k^{sev}, I_k^{hosp}, I_k^{icu}, H^{new}_k, D_k, R_k\},
 \end{equation}
+%
 for each age group $k \in \{1, \ldots, \agegroups\}$, where $S$ encodes the members of the population who are susceptible to infection and $E$ encodes the members of the population who have been exposed to COVID-19. Moreover, $I^{presym}$, $I^{asym}$, $I^{mild}$, $I^{hosp}$, $I^{icu}$ are the members of the population infected with COVID-19 and are, respectively, presymptomatic, asymptomatic, have mild symptoms, are hospitalised, or are in the ICU. Finally, $H^{new}_k$ represents the number of newly hospitalised individuals in age group $k$.
 
-We parameterize the \added{epidemiological} model using the mean of the posteriors as reported by \citet{abrams2021modelling} (details in SI).
+We parameterize the \added{epidemiological} model using the mean of the posteriors as specified by \citet{abrams2021modelling} (details in SI).
 
 \added{The second element of the tuple consists of the social contact matrix $\hat{C}$ that is currently in place. The reason to incorporate it in the state-space is two-fold. First, \citet{abrams2021modelling} define a compliance function, simulating the time people need to get used to the new rules set in place. As such, during the simulated week, there is a gradual shift from the current $\hat{C}$ to the next one. We thus require to know the current $\hat{C}$.}
 
-\added{Secondly, we require the current $\hat{C}$ to determine if we enter a new stage of the multi-stage exit strategy -- and thus consume part of the restriction-change budget -- or not.}
+\added{Secondly, we require the current $\hat{C}$ to determine whether the action changes the social restrictions in place -- and thus consume part of the budget -- or not.}
 
-\added{The third and last element of the tuple consists of the restriction-change budget $b$. We note that we incorporate a separate budget per action-dimension, so $p_{w}, p_{s}$ and $p_{l}$ each have their own budget, $b = [b_w, b_s, b_l]$. It is thus possible that, at timestep $t$, the budget for one of the dimensions is reduced but not the others.}
+\added{The third element of the tuple concerns of the budget $\budget$. We note that we incorporate a distinct budget per action-dimension, so $p_{w}, p_{s}$ and $p_{l}$ each have their own budget, rendering $\budget$ a vector $\budget = [b_w, b_s, b_l]$. As such, it is possible that, at timestep $t$, the budget for one of the proportional reductions is reduced but not the others.}
 
 Therefore, we define a state in \momdpname\ as follows:
 \begin{equation}
     \mdpstate = \mdpstate_m \cup \hat{C} \cup b
 \end{equation}
 
-\paragraph{Reward function:} We define a vector reward function which considers multiple objectives: attack rate (i.e., infections, hospitalisations) and the burden imposed by the interventions on the population.
+\paragraph{Reward function:} We define a vectorial reward function which considers multiple objectives: attack rate (i.e., infections, hospitalisations) and the social burden imposed by the interventions on the population.
 
 The attack rate in terms of infections is defined as the difference in susceptibles from the current state and next state~\cite{libin2020}. Since this is a cost that needs to be minimized, we defined the corresponding reward function as the negative attack rate:
 \begin{equation}
 \mdprewardfn_{\text{ARI}}(\mdpstate,\mdpaction,\mdpstate') = -(\sum_{k=1}^{\agegroups}S_k(\mdpstate)-\sum_{k=1}^{\agegroups}S_k(\mdpstate')).
 \end{equation}
 
-The reward function to reduce the attack rate in terms of hospitalisations is simply defined as the negative number of new hospitalizations:
+The reward function to reduce the attack rate in terms of hospitalisations is defined as the negative number of new hospitalizations:
 \begin{equation}
-\mdprewardfn_{\text{ARH}}(\mdpstate,\mdpaction,\mdpstate') = -\sum_{k=1}^{\agegroups}H^\text{new}_k(\mdpstate)
+\mdprewardfn_{\text{ARH}}(\mdpstate,\mdpaction,\mdpstate') = -\sum_{k=1}^{\agegroups}H^\text{new}_k(\mdpstate).
 \label{eqn:attack-rate-hosp}
 \end{equation}
 
-Finally, we use the missed contacts resulting from the intervention measures as a proxy for societal burden. To quantify missed contacts, we consider the original social contact matrix $C$ and the installed social contact matrix $\hat{C}$, and compute the difference $\hat{C} - C$. 
-The resulting difference matrix quantifies the average frequency of contacts missed. To determine missed contacts for the entire population, we apply the calculated difference matrix to the population sizes of the respective age groups that are currently uninfected (i.e., susceptible and recovered individuals). Therefore we define the social burden reward function $\mdprewardfn_{\text{SB}}$, as follows:
+Finally, we use the missed contacts resulting from the intervention measures as a proxy for societal burden. To quantify missed contacts, we consider the original social contact matrix $C$ and the installed social contact matrix $\hat{C}$ to compute the difference $\hat{C} - C$. 
+The resulting difference matrix quantifies the average frequency of contacts missed. To determine missed contacts for the entire population, we apply the difference matrix to the population sizes of the respective age groups that are currently uninfected (i.e., susceptible and recovered individuals). Therefore we define the social burden reward function $\mdprewardfn_{\text{SB}}$, as follows:
 
 \begin{equation}
     \mdprewardfn_{\text{SB}}(\mdpstate,\mdpaction,\mdpstate') = \sum_{i=1}^{\agegroups}\sum_{j=1}^{\agegroups}(\hat{C}-C)_{ij}S_i(\mdpstate)S_j(\mdpstate) + \sum_{i=1}^{\agegroups}\sum_{j=1}^{\agegroups}(\hat{C}-C)_{ij}R_i(\mdpstate)R_j(\mdpstate),
