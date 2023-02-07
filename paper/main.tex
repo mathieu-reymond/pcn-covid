@@ -24,7 +24,7 @@
 \usepackage{tikz}
 \usepackage{pgfplots}
 \usepackage{comment}
-\usepgfplotslibrary{dateplot, groupplots}
+\usepgfplotslibrary{dateplot, groupplots, fillbetween}
 \pgfplotsset{compat=newest}
 \usepackage{plotpolicies}   % custom package to plot policy-executions
 
@@ -499,7 +499,7 @@ All experiments are averaged over 5 runs. The hyper-parameters and the neural ne
 
 \begin{figure}
     \centering
-    \input{fig/arh_binomial.tex}
+    \input{fig/arh_binomial_both}
     \caption{The Pareto front of policies discovered by PCN using the Binomial model, showing the different compromises between the number of hospitalizations and the number of lost contacts. As the budget increases, so does the coverage set learnt by PCN. Changes are most noticeable in the less restrictive trade-offs in terms of social burden.}
     \label{fig:pf-binomal-arh-budgets}
 \end{figure}
