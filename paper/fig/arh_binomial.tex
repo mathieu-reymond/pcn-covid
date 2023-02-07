@@ -1,0 +1,20 @@
+\begin{tikzpicture}
+    \pgfplotsset{
+        scale only axis,
+        % height=6cm,
+        xlabel={total number of daily new hospitalizations},
+        ylabel={total lost contacts}
+    }
+    \begin{axis}[
+    legend entries={{$\text{PCN}_{b=2}$}, {$\text{PCN}_{b=3}$}, {$\text{PCN}_{b=4}$}, {$\text{PCN}_{b=5}$}, {$\text{PCN}$}, {Fixed}},
+    % width=9.5cm,
+    mark size=1pt,
+    ]
+    \addplot[only marks,draw opacity=1,fill opacity=0.5,mark=o,pc1] table [x=o_1, y=o_5, col sep=comma] {data/cs/arh/binomial/budget_2.csv};
+    \addplot[only marks,draw opacity=1,fill opacity=0.5,mark=o,pc2] table [x=o_1, y=o_5, col sep=comma] {data/cs/arh/binomial/budget_3.csv};
+    \addplot[only marks,draw opacity=1,fill opacity=0.5,mark=o,pc3] table [x=o_1, y=o_5, col sep=comma] {data/cs/arh/binomial/budget_4.csv};
+    \addplot[only marks,draw opacity=1,fill opacity=0.5,mark=o,pc4] table [x=o_1, y=o_5, col sep=comma] {data/cs/arh/binomial/budget_5.csv};
+    \addplot[only marks,draw opacity=1,fill opacity=0.5,mark=o,pc5] table [x=o_1, y=o_5, col sep=comma] {data/cs/arh/binomial/budget_None.csv};
+    \addplot[only marks,mark=+] table [x=o_0, y=o_1, col sep=comma] {data/cs/cs_fixed.csv};
+    \end{axis}
+\end{tikzpicture}
