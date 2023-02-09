@@ -572,7 +572,7 @@ Even with the $\mdprewardfn_\text{ARI}$, the increased budget shows an increase 
 
 The dataset of trajectories that PCN is trained on is pruned over time to keep only the most relevant trajectories. The returns of these trajectories are used in Figure~\ref{fig:pf-binomal-arh-budgets} to show the discovered coverage set. Each of these returns can be used as desired return for policy execution. We now assess the robustness of the executed policies, by comparing the return obtained after executing the policy with the corresponding target return. For each run, we execute the policy $10$ times and compute the $I_\varepsilon$ and $I_{\varepsilon-mean}$ metrics with respect to the coverage set learned during the run. We show that the executed policies reliably obtain returns that are similar to the desired return used to condition PCN.
 
-Results are shown in Table~\ref{tab:pcn-robustness}. The $I_\varepsilon$ indicators shows that, regardless of the budget, the decision maker will lose at worst a $0.050$ normalized return in any of the objectives. On average, it will lose $0.010$ returns. Moreover, we emphasize that the learned coverage set contains the non-dominated returns across the whole training procedure. Since the Binomial model is stochasticity, for multiple executions of the same policy, the executions that remains in the coverage set is the one with advantageous transitions due to this stochasticity. Thus, we expect our policy-executions to obtain slightly worse results than the target-solution selected from the coverage set. In light of this, we conclude that the policies trained by PCN are reliable and produce returns as close as possible from their chosen target.
+Results are shown in Table~\ref{tab:pcn-robustness}. The $I_\varepsilon$ indicators shows that, regardless of the budget, the decision maker will lose at worst a $0.050$ normalized return in any of the objectives. On average, it will lose $0.010$ normalized returns. Moreover, we emphasize that the learned coverage set contains the non-dominated returns across the whole training procedure. Since the Binomial model is stochasticity, for multiple executions of the same policy, the executions that remains in the coverage set is the one with advantageous transitions due to this stochasticity. Thus, we expect our policy-executions to obtain slightly worse results than the target-solution selected from the coverage set. In light of this, we conclude that the policies trained by PCN are reliable and produce returns as close as possible from their chosen target.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -786,6 +786,21 @@ We initialise $\beta^*_1$ to the value estimated in by Abrams et al. and choose 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Additional results}
+
+\subsection{Comparison of coverage sets learned on ODE and Binomial models}
+\subsection{sec:cs-ode-vs-binomial}
+
+\begin{figure}
+    \centering
+    \input{fig/arh_binomial_ode}
+    \caption{ODE vs Binomial}
+    \label{fig:pf-binomial-ode}
+\end{figure}
+
+The coverage sets displayed in Figure~\ref{fig:pf-binomal-arh-budgets} correspond to PCN trained on the Binomial model. To show that PCN copes with the stochasticity of this model, we compare these coverage sets with the ones learned on the ODE model.
+
+Results are shown in Figure~\ref{fig:pf-binomial-ode}. First, in a similar fashion as Figure~\ref{fig:pf-binomal-arh-budgets}, we show the interpolated average coverage set for different budget setting, with PCN trained on the ODE model. We observe similar trends as for the Binomial model. Next, for each budget setting, we compare the interpolated average coverage set of the Binomial setting with the ODE setting. We observe similar coverage set, regardless of the budget setting, indicating that PCN is able to cope with stochastic transitions.
+
 \subsection{Learned coverage sets}
 
 In Figure~\ref{fig:pareto-front-arh}, we display the coverage set with respect to the number of hospitalizations of the learned policies for both the ODE and Binomial variants, as the Binomial variants were omitted in the main paper for clarity. When trained on $\mathbf{R}_{\text{ARH}}$, the Binomial coverage set is on par with its ODE counterpart. On the other hand, the coverage sets when trained on $\mathbf{R}_{\text{ARI}}$ are slightly worse, as confirmed by the evaluation metrics in Table~\ref{tab:coverage-set}.
