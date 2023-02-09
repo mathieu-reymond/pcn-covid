@@ -500,6 +500,9 @@ To evaluate the quality of the policies discovered by PCN, we compare it to a ba
 
 All experiments are averaged over 5 runs. The hyper-parameters and the neural network architecture can be found in the SI.
 
+
+\subsection{Learned coverage set}
+
 \begin{figure}
     \centering
     \input{fig/arh_binomial_both}
@@ -507,14 +510,23 @@ All experiments are averaged over 5 runs. The hyper-parameters and the neural ne
     \label{fig:pf-binomal-arh-budgets}
 \end{figure}
 
-
-\subsection{Learned coverage set}
+\begin{table}[t]
+    \centering
+    \setlength{\tabcolsep}{0.5em} % for the horizontal padding
+    {\renewcommand{\arraystretch}{1.2}% for the vertical padding
+    \input{tab/arh/binomial}
+    }
+    \caption{Evaluation metrics for the coverage sets comparing hospitalizations with social burden. In general training on the ODE results in slightly better coverage sets than on the Binomial model. Training on infections (ARI) still provides a competitive coverage set in terms of hospitalizations. All PCN coverage sets outperform the baseline.}
+    \label{tab:coverage-set}
+  \end{table}
 
 We learn a coverage set that ranges from imposing minimal restrictions to enforcing many restrictions (see Figure~\ref{fig:policy-execution}). The coverage set is shown in Figure~\ref{fig:pf-binomal-arh-budgets}.
 
 Regardless of the imposed budget, we notice that the coverage sets discovered by PCN almost completely dominate the coverage set of the baseline, demonstrating that there are better alternatives to the fixed policies. This is most visible in the compromising policies, where one has to carefully choose when to remove social restrictions while at the same time minimizing the impact on daily new hospitalizations. In these scenarios, PCN discovers policies that can drastically reduce the total number of new hospitalizations (e.g. more than $20000$) for the same social burden. Analysing the executions of such policies (see Figure~\ref{fig:policy-execution}, middle plot) shows a flattened hospitalization curve, with a gradual increase of social freedom during the school holidays such that the peak stays stable and gradually decreases over time.
 
 Interestingly, we notice that the most restrictive policy (i.e. the one that prioritizes hospitalizations over social burden, see Figure~\ref{fig:policy-execution}, bottom plot) still starts to gradually increase $p_w$ and $p_l$ from the end of July onward. This is because by then, the epidemic has mostly faded out, and it is safe to reduce social restrictions. The timing of this reduction is important as reducing restrictions too soon can lead to a new wave. PCN learns the impact of its decisions over time, and correctly infers the timing at which restrictions can be safely lifted.
+
+\subsection{Impact of budgets on the coverage set}
 
 \begin{figure}
     \centering
@@ -523,8 +535,6 @@ Interestingly, we notice that the most restrictive policy (i.e. the one that pri
     }
     \label{fig:policy-execution}
 \end{figure}
-
-\subsection{Impact of budgets on the coverage set}
 
 Looking at the coverage sets displayed in Figure~\ref{fig:pf-binomal-arh-budgets}, we notice that the budget impacts the coverage set that has been learnt. In general, an increase of budget results in an increasingly better coverage set. This is to be expected, as a higher budget give the agent more freedom to change its actions as the epidemic progresses. However, we also notice that this increase of coverage sets is not necessarily gradual. Between the run with a budget of 2 and budget of 3, the difference in coverage set seems marginal. \todo{insight}.
 
@@ -542,16 +552,6 @@ Finally, we observe that, while the extremas deliver similar trade-offs regardle
     \label{fig:pe-binomial-arh-budgets}
 \end{figure}
 
-\begin{table}[t]
-  \centering
-  \setlength{\tabcolsep}{0.5em} % for the horizontal padding
-  {\renewcommand{\arraystretch}{1.2}% for the vertical padding
-  \input{tab/arh/binomial}
-  }
-  \caption{Evaluation metrics for the coverage sets comparing hospitalizations with social burden. In general training on the ODE results in slightly better coverage sets than on the Binomial model. Training on infections (ARI) still provides a competitive coverage set in terms of hospitalizations. All PCN coverage sets outperform the baseline.}
-  \label{tab:coverage-set}
-\end{table}
-
 \subsection{$R_\text{ARH}$ versus on $R_\text{ARI}$}
 \label{sec:arh-vs-ari}
 
@@ -562,19 +562,19 @@ Even with the $\mdprewardfn_\text{ARI}$, the increased budget shows an increase 
 \subsection{Robustness of policy executions}
 \label{sec:pcn-robustness}
 
-The dataset of trajectories that PCN is trained on is pruned over time to keep only the most relevant trajectories. The returns of these trajectories are used in Figure~\ref{fig:pareto-front} to show the discovered coverage set. Each of these returns can be used as desired return for policy execution. We now assess the robustness of the executed policies, by comparing the averaged return obtained over multiple policy executions with the corresponding target return. We show that the executed policies reliably obtain returns that are similar to the desired return used to condition PCN.
-
-Results are shown in Table~\ref{tab:pcn-robustness}. The $I_\varepsilon$ indicators shows that, over all policies, the decision maker will lose at worst $0.046$ and $0.068$ normalized returns in any of the objectives for the ODE, Binomial versions respectively. On average, it will lose $0.007$, $0.024$ normalized returns respectively, which corresponds to either a total of $3633, 1059$ more hospitalizations than expected or a total of $262, 76$ less contacts than expected.
-
-\begin{table}[t]
+\begin{table}
     \centering
     \setlength{\tabcolsep}{0.5em} % for the horizontal padding
     {\renewcommand{\arraystretch}{1.2}% for the vertical padding
-    \input{tab_pcn-robustness}
+    \input{tab/arh/arh_binomial_robustness}
     }
     \caption{Comparing the difference in the desired return provided to PCN and the actual return PCN obtained when executing its policy. We see that, regardless of the setting, the learned policy faithfully receives a return similar to its desired return.}
     \label{tab:pcn-robustness}
 \end{table}
+
+The dataset of trajectories that PCN is trained on is pruned over time to keep only the most relevant trajectories. The returns of these trajectories are used in Figure~\ref{fig:pf-binomal-arh-budgets} to show the discovered coverage set. Each of these returns can be used as desired return for policy execution. We now assess the robustness of the executed policies, by comparing the return obtained after executing the policy with the corresponding target return. For each run, we execute the policy $10$ times and compute the $I_\varepsilon$ and $I_{\varepsilon-mean}$ metrics with respect to the coverage set learned during the run. We show that the executed policies reliably obtain returns that are similar to the desired return used to condition PCN.
+
+Results are shown in Table~\ref{tab:pcn-robustness}. The $I_\varepsilon$ indicators shows that, regardless of the budget, the decision maker will lose at worst a $0.050$ normalized return in any of the objectives. On average, it will lose $0.010$ returns. Moreover, we emphasize that the learned coverage set contains the non-dominated returns across the whole training procedure. Since the Binomial model is stochasticity, for multiple executions of the same policy, the executions that remains in the coverage set is the one with advantageous transitions due to this stochasticity. Thus, we expect our policy-executions to obtain slightly worse results than the target-solution selected from the coverage set. In light of this, we conclude that the policies trained by PCN are reliable and produce returns as close as possible from their chosen target.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
