@@ -87,6 +87,9 @@
 \newcommand{\agegroups}{K}
 \newcommand{\budget}{\bm{b}}
 
+\newcommand{\ltuple}{\langle}
+\newcommand{\rtuple}{\rangle}
+
 
 % color scheme for plots: plot-color-i
 \definecolor{pc1}{RGB}{76, 120, 168}
@@ -227,30 +230,32 @@ By evaluating the solution set of mitigation policies learned by PCN, we observe
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Background}
-\subsection{Multi-Objective Reinforcement Learning}
-Many real-world decisions problems often have multiple and possibly conflicting objectives. Multi-objective reinforcement learning (MORL) can be used to find optimal solutions for sequential decision making problems with multiple objectives~\cite{hayes2021practical}. For MORL, problems are typically modelled as a multi-objective Markov decision process (MOMDP), i.e., a tuple, $\mathcal{M} = (\mdpstatespace, \mdpactionspace, \mdptransition, \mdpdiscount, \momdprewardfn)$, where $\mdpstatespace$, $\mdpactionspace$ denote the state and action spaces respectively, $\mdptransition \colon \mdpstatespace \times \mdpactionspace \times \mdpstatespace  \to \left[ 0, 1 \right]$ denotes a probabilistic transition function, $\mdpdiscount$ is a discount factor determining the importance of future rewards and $\momdprewardfn \colon \mdpstatespace \times \mdpactionspace \times \mdpstatespace \to \mathbb{R}^n$ is an $n$-dimensional vector-valued immediate reward function, where $n$ corresponds to the number of objectives. 
+In the following, we use bold notation $\momdpvaluefunction$ to denote a vectorial value, while non-bold notation $\mdpvaluefunction$ for its scalar counterpart.
 
-While MOMDPs define the actions an agent can take, it does not define which actions are taken in each state. We call this the agent's \emph{policy}. This policy dictates the agent's behavior. More formally, a policy $\mdppolicy$ is a probabilistic function $\mdpstatespace \times \mdpactionspace \to \left[ 0, 1 \right]$ determining the probability, for each state $s \in \mdpstatespace$, to take an action $a \in \mdpactionspace$. We measure the performance of $\mdppolicy$ through the expected sum of discounted rewards it achieves. This is denoted as the $\momdpvaluefunction$-value:
+\subsection{Multi-Objective Reinforcement Learning}
+Real-world decisions problems typically consider multiple and possibly conflicting objectives. Multi-objective reinforcement learning (MORL) can be used to find optimal solutions for sequential decision making problems with multiple objectives~\cite{hayes2021practical}. Multi-objective sequential problems are typically modelled as a multi-objective Markov decision process (MOMDP), i.e., a tuple, $\mathcal{M} = \ltuple\mdpstatespace, \mdpactionspace, \mdptransition, \mdpdiscount, \momdprewardfn\rtuple$, where $\mdpstatespace$, $\mdpactionspace$ denote the state and action spaces respectively, $\mdptransition \colon \mdpstatespace \times \mdpactionspace \times \mdpstatespace  \to \left[ 0, 1 \right]$ denotes a probabilistic transition function, $\mdpdiscount$ is a discount factor determining the importance of future rewards and $\momdprewardfn \colon \mdpstatespace \times \mdpactionspace \times \mdpstatespace \to \mathbb{R}^n$ is an $n$-dimensional vector-valued immediate reward function, where $n$ corresponds to the number of objectives. 
+
+While MOMDPs define the actions an agent can take, it does not define the agent's behavior, i.e., which actions are taken in each state. Given this MOMDP, an agent follows a policy $\mdppolicy$, that expresses the probability to take action $\action \in \mdpactionspace$ when in state $\state \in \mdpstatespace$: $\mdpstatespace \times \mdpactionspace \to \left[ 0, 1 \right]$. We measure the performance of $\mdppolicy$ through the expected sum of discounted rewards (denoted the \emph{Value}) it achieves from the initial state $\state_0$ until the end of the decision problem:
 
 \begin{equation}
-    \momdpvaluefunction^\mdppolicy = \mathbb{E} \left [ \sum_{t=0}^h \mdpdiscount^t \momdpreward_t |\ \mdppolicy, s_0 \right ],
+    \momdpvaluefunction^\mdppolicy = \mathbb{E} \left [ \sum_{t=0}^h \mdpdiscount^t \momdpreward_t |\ \mdppolicy, \state_0 \right ],
 \end{equation}
 %
-where $\momdpreward_t = \mdprewardfn(\state_t, \action_t, \state_{t+1})$.
+where $\momdpreward_t$ corresponds to the multi-objective reward observed at time $t$, by following policy $\mdppolicy$, given by the reward function $\mdprewardfn(\state_t, \action_t, \state_{t+1})$, where $\state_t$ is the current state, $\action_t$ corresponds to the action that was taken, and $\state_{t+1}$ signifies the state reached by taking action $\action_t$.
 
-For single-objective RL, i.e., when $n = 1$, the goal is to find the policy $\mdppolicy^{*}$ that maximizes the $\mdpvaluefunction$-value:
+For single-objective RL, where $n = 1$, the goal is to find the policy $\mdppolicy^{*}$ that maximizes the $\mdpvaluefunction$-value:
 \begin{equation}
 \mdppolicy^*= \arg\max_\mdppolicy \mdpvaluefunction^\mdppolicy.
 \end{equation}
 
-In contrast, in MORL, $n > 1$ which leads to vectorial returns. In this case, there can be policies for which, without any additional information, it is impossible to know if one is better than the other. For example, we cannot decide which policy between $\mdppolicy_1, \mdppolicy_2$ is optimal if they lead to expected returns (also called V-values) $\momdpvaluefunction^{\mdppolicy_1}=(0,1), \momdpvaluefunction^{\mdppolicy_2}=(1,0)$ respectively. We call these solutions \emph{non-dominated}, i.e., solutions for which it is impossible to improve an objective without hampering another. The set that contains all the non-dominated solutions of the decision problem is called the \emph{Pareto front} $\mathcal{F}$. Our goal is to find the set of policies that lead to all the V-values contained in the Pareto front $\Pi^* = \{\ \pi | \momdpvaluefunction^{\pi} \in \mathcal{F}\}$. In general, we call any set of V-values a \emph{solution set}. When a solution set contains only  non-dominated V-values, it is referred to as a \emph{coverage set}. In the case that no $\mdppolicy$ exists that has a $\momdpvaluefunction^{\pi}$ dominating any of the solutions in a coverage set, then this coverage set is the Pareto front.
+In contrast, for MORL, $n > 1$ which leads to vectorial returns. In this case, there can be policies for which, without any additional information, it is impossible to know if one is better than the other. For example, it is impossible to decide which policy between $\mdppolicy_1, \mdppolicy_2$ is optimal if both policies lead to expected returns $\momdpvaluefunction^{\mdppolicy_1}=(0,1), \momdpvaluefunction^{\mdppolicy_2}=(1,0)$ respectively. We call these solutions \emph{non-dominated}, i.e., solutions for which it is impossible to improve an objective without hampering another. The set that contains all the non-dominated solutions of the decision problem is called the \emph{Pareto front} $\mathcal{F}$. Our goal is to find the set of policies that lead to all the $\mdpvaluefunction$-values contained in the Pareto front $\Pi^* = \{\ \pi | \momdpvaluefunction^{\pi} \in \mathcal{F}\}$. In general, we call any set of $\mdpvaluefunction$-values a \emph{solution set}. When a solution set contains only  non-dominated $\mdpvaluefunction$-values, it is referred to as a \emph{coverage set}. In the case that no $\mdppolicy$ exists that has a $\momdpvaluefunction^{\pi}$ dominating any of the solutions in a coverage set, then this coverage set is the Pareto front.
 
 \subsection{Multi-Objective Metrics}
 Comparing the learned coverage sets produced by different algorithms is a non-trivial task, as one algorithm's output might dominate the other in some region of the objective-space, but be dominated in another. Intuitively, one would generally prefer the algorithm that covers a wider range of decision maker preferences. In this work we use several metrics to evaluate our algorithm's performance.
 
-A widely used metric in the literature is called the \emph{hypervolume}~\cite{zitzler2003}. This metric evaluates the learned coverage set by computing its volume with respect to a fixed specified reference point. The reference point is taken as a lower bound on the achievable returns so that the volumes are always positive. By definition, the solutions contained in the Pareto front dominate all other possible solutions. Thus, no other solution can further increase the volume under the Pareto front. This means that the hypervolume is the highest for the Pareto front. One disadvantage of the hypervolume is that it can be difficult to interpret. For example, when working in high-dimensional objective-spaces, adding or removing a single point can drastically change hypervolume values, especially if the point lies close to an extremum of said space.
+A widely used metric in the literature is called the \emph{hypervolume}~\cite{zitzler2003}. This metric evaluates the learned coverage set by computing its volume with respect to a fixed reference point. The reference point is taken as a lower bound on the achievable returns so that the volumes are always positive. By definition, the solutions contained in the Pareto front dominate all other possible solutions. Thus, no other solution can further increase the volume under the Pareto front. This means that the hypervolume is the highest for the Pareto front. One drawback of the hypervolume is that it can be difficult to interpret. For example, when working in high-dimensional objective-spaces, adding or removing a single point can drastically change hypervolume values, especially if the point lies close to an extremum of said space.
 
-To counterpoise these shortcomings, we additionally evaluate our work on a different metric called the $\varepsilon$-indicator $I_\varepsilon$~\cite{zitzler2003}, which measures how close a coverage set is to the Pareto front $\mathcal{F}$. Intuitively, $I_\varepsilon$ shows that any solution of $\mathcal{F}$ is \emph{at most} $\varepsilon$ better with respect to each objective $o$ than the closest solution of the evaluated coverage set:
+To counterpoise these shortcomings, we evaluate our work using an additional metric called the $\varepsilon$-indicator $I_\varepsilon$~\cite{zitzler2003}, which measures how close a coverage set is to the Pareto front $\mathcal{F}$. Intuitively, $I_\varepsilon$ shows that any solution of $\mathcal{F}$ is \emph{at most} $\varepsilon$ better with respect to each objective $o$ than the closest solution of the evaluated coverage set:
 
 \begin{equation}
 \label{eq:epsilon-metric}
@@ -265,9 +270,9 @@ To counterpoise these shortcomings, we additionally evaluate our work on a diffe
 %
 where $||.||_{\infty}$, the L-infinity norm, returns the magnitude of the largest entry of a vector.
 
-The main disadvantage of this metric is that we need the true Pareto front to compute it, which in the case of our MOMDP (see Section~\ref{sec:sars-cov2-momdp}) is unknown. To still gain insights from our learned policies, we approximate the true Pareto front using the non-dominated policies across all runs.
+The main disadvantage of this metric is that we need the true Pareto front to compute it, which is unknown for our MOMDP (see Section~\ref{sec:sars-cov2-momdp}). To still gain insights from our learned policies, we approximate the true Pareto front using the non-dominated policies across all runs.
 
-We note that the $\varepsilon$-indicator metric is quite pessimistic, as it measures worst-case performance~\cite{zintgraf2015}, i.e., e.g., it will still report bad performance as long as a single point of the Pareto front is not correctly modeled, even if all the other points are covered. As such, we also use the $I_{\varepsilon-mean}$ \cite{reymond2022pcn} which measures the \emph{average} $\varepsilon$ distance of the solutions in $\mathcal{F}$ with respect to the evaluated coverage set.
+We note that the $\varepsilon$-indicator metric is quite pessimistic, as it measures worst-case performance~\cite{zintgraf2015}, i.e., it will still report low performance as long as a single point of the Pareto front is incorrectly modeled, even if all the other points are covered. As such, we also use the $I_{\varepsilon-mean}$ \cite{reymond2022pcn} which measures the \emph{average} $\varepsilon$ distance of the solutions in $\mathcal{F}$ with respect to the evaluated coverage set.
 
 Figure~\ref{fig:paretofrontmetrics} shows a visual representation of the hypervolume and $\varepsilon$ metrics in two dimensions.
 
@@ -290,29 +295,32 @@ Figure~\ref{fig:paretofrontmetrics} shows a visual representation of the hypervo
       (2,2) -- (2,1) -- (4,1) -- (4,0) -- (-0.5,0);
       \end{axis}
     \end{tikzpicture}
-    \caption{Example of a Pareto front (black dots) and a coverage set (white dots) in a 2-objective environment. The hypervolume metric (in light blue) measures the volume of all dominated solutions with respect to some reference point (cross). The $\varepsilon$ metrics first compute the maximum distance between each point in the Pareto front and its closest point in the coverage set ($\varepsilon_i$). We can then take their maximum value to compute the $I_\varepsilon$ metric, or their mean value to obtain the $I_{\varepsilon-mean}$ metric of the coverage set.}
+    \caption{Example of a Pareto front (black dots) and a coverage set (white dots) in a 2-objective environment. The hypervolume metric (in light blue) measures the volume of all dominated solutions with respect to some reference point (cross). The reference point is taken as a lower bound on the achievable returns, which is why it can differ from the origin. The $\varepsilon$ metrics first compute the maximum distance between each point in the Pareto front and its closest point in the coverage set ($\varepsilon_i$). We can then take their maximum value to compute the $I_\varepsilon$ metric, or their mean value to obtain the $I_{\varepsilon-mean}$ metric of the coverage set.}
     \label{fig:paretofrontmetrics}
 \end{figure}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{COVID-19 model and the \momdpname\  MOMDP}
+\section{COVID-19 model and \momdpname\  MOMDP}
 \label{sec:sars-cov2-momdp}
 \subsection{Stochastic compartment model for SARS-CoV-2}
 \label{sec:sars-cov2-momdp_model}
-As an environment to evaluate non-pharmaceutical interventions, we consider the adapted version of the SEIR compartmental model presented by Abrams et al., that was used to investigate exit strategies in Belgium after the first epidemic wave of SARS-CoV-2~\cite{abrams2021modelling}. This model constitutes a discrete-time stochastic model, that considers an age-structured population. This model generalises a standard SEIR model\footnote{A standard SEIR model divides the population into four different states, i.e., susceptible, exposed, infectious and recovered individuals.}, extended to capture the different stages of disease spread and history that are associated with SARS-CoV-2 (i.e., pre-symptomatic, asymptomatic, symptomatic with mild symptoms and symptomatic with severe symptoms) and to represent the stages associated with severe disease, i.e., hospitalisation, admission to the intensive care unit (ICU) and death. 
-As we consider an age-structured population, we consider this extended SEIR structure for $\agegroups = 10$ age groups,  i.e., $[0-10), [10-20), [20-30), [30-40), [40-50), [50-60), [60-70), [70-80), [80-90), [90,100+)$. Contacts of the different age-groups, which impact the propagation rate of the epidemic, are modeled using social contact matrices (SCMs). We define a SCM for 6 different social environments: $\chome, \cwork, \ctransport, \cschool, \cleisure, \cother$ for the home, work, transport, school, leisure, other environments respectively.
+To evaluate non-pharmaceutical interventions, we consider the compartmental model presented by Abrams et al., that was used to investigate exit strategies in Belgium after the first epidemic wave of SARS-CoV-2~\cite{abrams2021modelling}. This model concerns a discrete-time stochastic model, that considers an age-structured population. The model generalises a standard SEIR model\footnote{A standard SEIR model divides the population into four different states, i.e., susceptible, exposed, infectious and recovered individuals.}, extended to capture the different stages of disease spread and history that are associated with SARS-CoV-2 (i.e., pre-symptomatic, asymptomatic, symptomatic with mild symptoms and symptomatic with severe symptoms) and to represent the stages associated with severe disease, i.e., hospitalisation, admission to the intensive care unit (ICU) and death. 
+As we consider an age-structured population, we consider this extended SEIR structure for $\agegroups = 10$ age groups,  i.e., $[0-10), [10-20), [20-30), [30-40), [40-50), [50-60), [60-70), [70-80), [80-90), [90,100+)$. Contacts of the different age-groups, which impact the propagation rate of the epidemic, are modeled using social contact matrices. We define a social contact matrix for 6 different social environments: $\chome, \cwork, \ctransport, \cschool, \cleisure, \cother$, for the home, work, transport, school, leisure, other environments respectively.
 The model is described by a set of ordinary differential equations (ODEs), as described in SI.
 By formulating this set of differential equations a chain-binomial process (as detailed in SI) we can obtain stochastic trajectories from this model~\cite{abrams2021modelling}.
 
 \subsection{Interventions strategies}
 \label{sec:interventions}
-In order to model different types of interventions, we follow \citet{abrams2021modelling}. Firstly, in order to consider distinct exit scenarios, we modulate the SCMs to reflect a contact reduction in a particular age group. Secondly, we assume that compliance to the interventions is gradual and model this using a logistic compliance function (see details in SI).
-We consider a contact reduction function that imposes a proportional reduction of work (including transport) $p_w$, school $p_s$ and leisure $p_l$ contacts, which is implemented as a linear combination of SCMs:
+To model different types of interventions, we follow the contact reduction scheme presented by \citet{abrams2021modelling}. Firstly, to consider distinct exit scenarios, we modulate the social contact matrices to reflect a contact reduction in a particular age group.
+
+We consider a contact reduction function that imposes a proportional reduction of work (including transport) $p_w$, school $p_s$ and leisure $p_l$ contacts, which is implemented as a linear combination of social contact matrices:
 \begin{equation}
 \label{eq:scm}
-    \hat{C} = \chome + p_w (\cwork + \ctransport) + p_s \cschool + p_l (\cleisure + \cother)
+    \hat{C}(p_w, p_s, p_l) = \chome + p_w (\cwork + \ctransport) + p_s \cschool + p_l (\cleisure + \cother)
 \end{equation}
+
+We denote $\hat{C}_t$ the social contact matrix at timestep $t$, resulting from the reduction function $\hat{C}$. Secondly, we assume that compliance to the interventions is gradual and model this using a logistic compliance function (see details in SI).
 
 \subsection{The \momdpname\ Environment}
 \begin{figure}[t!]
@@ -350,44 +358,44 @@ We consider a contact reduction function that imposes a proportional reduction o
     \caption{Schematic diagram of the compartmental model for SARS-CoV-2 presented by \citet{abrams2021modelling} which is used to derive the MOMDP.}
     \label{fig:ode_mdel}
 \end{figure}
-In order to apply multi-objective reinforcement learning, we construct the \momdpname\ MOMDP based on the epidemiological model introduced in Section~\ref{sec:sars-cov2-momdp_model} and graphically depicted in Figure~\ref{fig:ode_mdel}.
+In order to apply multi-objective reinforcement learning, we construct the \momdpname\ MOMDP based on the epidemiological model introduced in Section~\ref{sec:sars-cov2-momdp_model} and graphically depicted in Figure~\ref{fig:ode_mdel}. Moreover, we consider a finite-horizon setting where we simulate the compartment model for a fixed number of weeks.
 
-\paragraph{Action-space:} Our actions concern the installment of a social contact matrix $\hat{C}$, with a particular reduction (see Section~\ref{sec:interventions}). To this end, we use the proportional reduction parameters $p_w, p_s, p_l$ defined in Section~\ref{sec:interventions}. Thus, each $\mdpaction \in \mdpactionspace$ is a 3-dimensional continuous vector in $[0,1]^3$ (i.e., $\mdpaction = [p_{w}, p_{s}, p_{l}]$) which impacts the SCM according to Equation~\ref{eq:scm}.
+\paragraph{Action-space:} Our actions concern the installment of a social contact matrix with a particular reduction resulting from the reduction function $\hat{C}$ (see Section~\ref{sec:interventions}). To this end, we use the proportional reduction parameters $p_w, p_s, p_l$ defined in Section~\ref{sec:interventions}. Thus, each $\mdpaction \in \mdpactionspace$ is a 3-dimensional continuous vector in $[0,1]^3$ (i.e., $\mdpaction = [p_{w}, p_{s}, p_{l}]$) which impacts the social contact matrix according to Equation~\ref{eq:scm}.
 
-\paragraph{Transition function:} The model defined by \citet{abrams2021modelling} utilises a model transition probability $M(\mdpstate_m' \mid \mdpstate_m, \hat{C})$ (see SI for details on $M$), where $\hat{C}$ the currently installed SCM, that progresses the epidemiological model in one timestep.
+\paragraph{Transition function:} The model defined by \citet{abrams2021modelling} utilises a model transition probability $M(\mdpstate_m' \mid \mdpstate_m, \hat{C}, p_{w}, p_{s}, p_{l})$ (see SI for details on $M$), where $\hat{C}(p_{w}, p_{s}, p_{l})$ returns the currently installed social contact matrix, that progresses the epidemiological model in one timestep.
 We use this function as the transition function in \momdpname.
 
-In a classical MDP, executing an action $\action_t$ in any state $\state_t$ leads to a next state $\state_{t+1}$ according to the transition function $\mdptransition$. At every timestep $t$, the policy is free to choose the action to perform. In our case, this potentially results in a different restriction $[p_{w}, p_{s}, p_{l}]$ every week. However, we argue that in the context of mitigation policies, consistency is key, and policies that impose changes too frequently will be hard to follow.
+In a classical MDP, executing an action $\action_t$ in any state $\state_t$ leads to a next state $\state_{t+1}$ according to the transition function $\mdptransition$. At every timestep $t$, the agent is free to choose the action to perform. In our case, this potentially results in a different restriction $[p_{w}, p_{s}, p_{l}]$ every week. However, we argue that in the context of mitigation policies, consistency is important and policies that impose changes too frequently will be hard to adhere to.
 
-In order to learn realistic and consistent mitigation policies, we incorporate a \emph{budget} on the number of times a policy can change its actions until the terminal state of the MOMDP. Concretely, when the action changes, i.e., if the social restriction proposed by the policy is different from the current one in place, we reduce the budget by one. We only allow action changes as long as there is budget left. We note that we can simulate a no-limit budget setting by setting the budget to the length of the episode.
+In order to learn realistic and consistent mitigation policies, we introduce a \emph{budget} regarding the number of times a policy can change its actions until the terminal state of the MOMDP is reached. Concretely, when the action changes, i.e., if the social restriction proposed by the policy is different from the one that is currently in place, we reduce the budget by one. We only allow action changes as long as there is budget left. We note that we can mimic a no-limit budget setting by choosing a budget that corresponds to the horizon of the environment.
 
-Finally, for each timestep $t$, our transition function $\mdptransition$ uses the model transition probability $M$ to simulate the model for one week, using $\hat{C}$ obtained from $\mdpaction_t$.
+Finally, for each timestep $t$, our transition function $\mdptransition$ uses the model transition probability $M$ to simulate the model for one week, using $\hat{C}_t$ obtained from $\mdpaction_t$.
 
 % As mentioned above and detailed in the SI, the compartment model is described by a set of ODEs. To obtain a stochastic version, the ODEs can be formulated as a chain-binomial process. Based on these cases, we also create and experiment on two versions of the \momdpname\ environment: the (deterministic) \emph{ODE model} (i.e., a MOMDP with a deterministic transition function) and the (stochastic) \emph{Binomial model} (i.e., a MOMDP with a stochastic transition function).
 
 \paragraph{State-space:} The state of the MOMDP concerns a 3-tuple. The first element, $\mdpstate_m$, directly corresponds to the aggregation of the state variables in the epidemiological model, i.e., a tuple,
 \begin{equation}
-    \{S_k, E_k, I_k^{presym}, I_k^{asym}, I_k^{mild}, I_k^{sev}, I_k^{hosp}, I_k^{icu}, H^{new}_k, D_k, R_k\},
+    \ltuple S_k, E_k, I_k^{presym}, I_k^{asym}, I_k^{mild}, I_k^{sev}, I_k^{hosp}, I_k^{icu}, H^{new}_k, D_k, R_k \rtuple ,
 \end{equation}
 %
-for each age group $k \in \{1, \ldots, \agegroups\}$, where $S$ encodes the members of the population who are susceptible to infection and $E$ encodes the members of the population who have been exposed to COVID-19. Moreover, $I^{presym}$, $I^{asym}$, $I^{mild}$, $I^{hosp}$, $I^{icu}$ are the members of the population infected with COVID-19 and are, respectively, presymptomatic, asymptomatic, have mild symptoms, are hospitalised, or are in the ICU. Finally, $H^{new}_k$ represents the number of newly hospitalised individuals in age group $k$.
+for each age group $k \in \{1, \ldots, \agegroups\}$, where $S$ encodes the members of the population who are susceptible to infection and $E$ encodes the members of the population who have been exposed to COVID-19. Moreover, $I^{presym}$, $I^{asym}$, $I^{mild}$, $I^{hosp}$, $I^{icu}$ denote the members of the population infected with COVID-19 and are, respectively, presymptomatic, asymptomatic, mildly symptomatic, hospitalised, or in the ICU. Finally, $H^{new}_k$ represents the number of newly hospitalised individuals in age group $k$.
 
 We parameterize the epidemiological model using the mean of the posteriors as specified by \citet{abrams2021modelling} (details in SI).
 
-The second element of the tuple consists of the social contact matrix $\hat{C}$ that is currently in place. The reason to incorporate it in the state-space is two-fold. First, \citet{abrams2021modelling} define a compliance function, simulating the time people need to get used to the new rules set in place. As such, during the simulated week, there is a gradual shift from the current $\hat{C}$ to the next one. We thus require to know the current $\hat{C}$.
+The second element of the tuple consists of the social contact matrix $\hat{C}_t$ that is currently in place. The reason to incorporate it in the state-space is two-fold. First, \citet{abrams2021modelling} define a compliance function, simulating the time people need to get used to the new rules set in place. As such, during the simulated week, there is a gradual shift from the current $\hat{C}_t$ to the new social contact matrix, $\hat{C}_{t+1}$. As such, we need to maintain the current $\hat{C}_t$, to maintain a Markovian environment.
 
-Secondly, we require the current $\hat{C}$ to determine whether the action changes the social restrictions in place -- and thus consume part of the budget -- or not.
+Secondly, we require the current $\hat{C}_t$ to determine whether the action changes the social restrictions in place, and thus consume part of the budget.
 
-The third element of the tuple concerns of the budget $\budget$. We note that we incorporate a distinct budget per action-dimension, so $p_{w}, p_{s}$ and $p_{l}$ each have their own budget, rendering $\budget$ a vector $\budget = [b_w, b_s, b_l]$. As such, it is possible that, at timestep $t$, the budget for one of the proportional reductions is reduced but not the others.
+The third element of the tuple concerns the budget $\budget$. We incorporate a distinct budget per action-dimension, so $p_{w}, p_{s}$ and $p_{l}$ each have their own budget, resulting in a vector $\budget = [b_w, b_s, b_l]$. As such, it is possible that, at timestep $t$, the budget for one of the proportional reductions is reduced but not the others.
 
 Therefore, we define a state in \momdpname\ as follows:
 \begin{equation}
     \mdpstate = \mdpstate_m \cup \hat{C} \cup b
 \end{equation}
 
-\paragraph{Reward function:} We define a vectorial reward function which considers multiple objectives: attack rate (i.e., infections, hospitalisations) and the social burden imposed by the interventions on the population.
+\paragraph{Reward function:} We define a vectorial reward function which considers multiple objectives: attack rate (i.e., infections and hospitalisations) and the social burden imposed by the interventions on the population.
 
-The attack rate in terms of infections is defined as the difference in susceptibles from the current state and next state~\cite{libin2020}. Since this is a cost that needs to be minimized, we defined the corresponding reward function as the negative attack rate:
+The attack rate in terms of infections is defined as the difference in susceptibles from the current state to the next state~\cite{libin2020}. Since this is a cost that needs to be minimized, we defined the corresponding reward function as the negative attack rate:
 \begin{equation}
 \mdprewardfn_{\text{ARI}}(\mdpstate,\mdpaction,\mdpstate') = -(\sum_{k=1}^{\agegroups}S_k(\mdpstate)-\sum_{k=1}^{\agegroups}S_k(\mdpstate')).
 \end{equation}
@@ -399,86 +407,86 @@ The reward function to reduce the attack rate in terms of hospitalisations is de
 \end{equation}
 
 Finally, we use the missed contacts resulting from the intervention measures as a proxy for societal burden. To quantify missed contacts, we consider the original social contact matrix $C$ and the installed social contact matrix $\hat{C}$ to compute the difference $\hat{C} - C$. 
-The resulting difference matrix quantifies the average frequency of contacts missed. To determine missed contacts for the entire population, we apply the difference matrix to the population sizes of the respective age groups that are currently uninfected (i.e., susceptible and recovered individuals). Therefore we define the social burden reward function $\mdprewardfn_{\text{SB}}$, as follows:
+The resulting difference matrix quantifies the average frequency of contacts missed. To determine missed contacts for the entire population, we apply the difference matrix to the population sizes of the respective age groups that are currently uninfected (i.e., susceptible and recovered individuals). Formally, we define the social burden reward function $\mdprewardfn_{\text{SB}}$, as follows:
 
 \begin{equation}
     \mdprewardfn_{\text{SB}}(\mdpstate,\mdpaction,\mdpstate') = \sum_{i=1}^{\agegroups}\sum_{j=1}^{\agegroups}(\hat{C}-C)_{ij}S_i(\mdpstate)S_j(\mdpstate) + \sum_{i=1}^{\agegroups}\sum_{j=1}^{\agegroups}(\hat{C}-C)_{ij}R_i(\mdpstate)R_j(\mdpstate),
 \end{equation}
-where $S_k(\mdpstate)$ represents the number of susceptible individuals in age group $k$ in state $\mdpstate$ and $R_k$ represents the number of recovered individuals in age group $k$ in state $\mdpstate$. In Section~\ref{sec:experiments}, we optimize PCN on two different variants for the multi-objective reward function: $[\mdprewardfn_\text{ARH}, \mdprewardfn_\text{SB}]$ and $[\mdprewardfn_\text{ARI}, \mdprewardfn_\text{SB}]$.
+where $S_k(\mdpstate)$ represents the number of susceptible individuals in age group $k$ in state $\mdpstate$ and $R_k$ represents the number of recovered individuals in age group $k$ in state $\mdpstate$. In Section~\ref{sec:experiments}, we optimize PCN on two different variants for the multi-objective reward function: $[\mdprewardfn_\text{ARH}, \mdprewardfn_\text{SB}]$ and $[\mdprewardfn_\text{ARI}, \mdprewardfn_\text{SB}]$, to study the impact of these distinct attack rate quantities.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Pareto Conditioned Networks}
-In multi-objective optimization, the set of optimal policies can grow exponentially in the number of objectives. Thus, recovering them all is an expensive process and requires an exhaustive exploration of the complete state space. To address this problem, we use Pareto Conditioned Networks~(PCN), a method that uses a single neural network to encompass all non-dominated policies \cite{reymond2022pcn}. The key idea behind PCN is to use supervised learning techniques to improve the policy instead of resorting to temporal-difference learning. % This eliminates the moving-target problem \cite{schmidhuber2019}, resulting in stable learning algorithm.
+In multi-objective optimization, the set of optimal policies can grow exponentially in the number of objectives. Thus, recovering them all is a computationally expensive process and requires an exhaustive exploration of the complete state space. To address this problem, we use Pareto Conditioned Networks~(PCN), a method that uses a single neural network to encompass all non-dominated policies \cite{reymond2022pcn}. The key idea behind PCN is to use supervised learning techniques to improve the policy instead of resorting to temporal-difference learning. % This eliminates the moving-target problem \cite{schmidhuber2019}, resulting in stable learning algorithm.
 
-\todo{TODO REPHRASE, FROM PCN PAPER} Using neural networks as function approximators in RL comes with many challenges. One of them is that the target (e.g., the optimal action of the policy) is not known in advance --- as opposed to classical supervised learning where the ground-truth target is provided. As the behavior of the agent improves over time, the action used as target can change, often leading to hard-to-tune and brittle learners \cite{mnih2015,fu2019}.
+One major challenge of using neural networks as function approximators in RL is that the target (e.g., the optimal action of the policy) is not known in advance, as opposed to classical supervised learning where the ground-truth target is provided. As the behavior of the agent improves over time, the action used as target can change, often leading to hard-to-tune and brittle learners \cite{mnih2015,fu2019}.
 
 Instead of trying to continuously improve the policy by learning actions that should lead to the highest cumulative reward, PCN flips the problem, by learning actions that should lead to any \emph{desired} cumulative reward (be it high or low). In this way, all past trajectories can be reused for supervision, since their returns are known, as well as the actions needed to reach said returns. We can thus train a policy that, conditioned on a desired return, provides the optimal action to reach said return. By leveraging the generalization properties of neural networks, we can accumulate incrementally better experience by conditioning on increasingly higher reward-goals
 
-PCN uses a single neural network that takes a tuple $\langle \mdpstate, \hat{h}, \mathbf{\hat{R}}  \rangle$ as input. $\mathbf{\hat{R}}$ represents the \emph{desired return} of the decision maker, i.e. the return PCN should reach at the end of the episode. $\hat{h}$ denotes the \emph{desired horizon} that expresses the number of timesteps that should be executed before reaching $\mathbf{\hat{R}}$. At execution time, both $\hat{h}$ and $\mathbf{\hat{R}}$ are chosen by the decision maker at the start of the episode. Then, at every timestep, the desired horizon is updated according to the perceived reward $\momdpreward_t$, $\mathbf{\hat{R}} \leftarrow \mathbf{\hat{R}} - \momdpreward_t$ and the desired horizon is decreased by one, $\hat{h} \leftarrow \hat{h}-1$.
+Instead of using a neural network that takes a state $\mdpstate$ as input, PCN uses a single neural network that takes a tuple $\ltuple \mdpstate, \hat{h}, \mathbf{\hat{R}} \rtuple$ as input. $\mathbf{\hat{R}}$ represents the \emph{desired return} of the decision maker, i.e. the return PCN should reach at the end of the episode. $\hat{h}$ denotes the \emph{desired horizon} that expresses the number of timesteps that should be executed before reaching $\mathbf{\hat{R}}$. At execution time, both $\hat{h}$ and $\mathbf{\hat{R}}$ are chosen by the decision maker at the start of the episode. Then, at every timestep, the desired horizon is updated according to the perceived reward $\momdpreward_t$, $\mathbf{\hat{R}} \leftarrow \mathbf{\hat{R}} - \momdpreward_t$ and the desired horizon is decreased by one, $\hat{h} \leftarrow \hat{h}-1$.
 
-PCN's neural network has an output for each action $\action_i \in \mathcal{A}$. Each output represents the confidence the network has that, by taking the corresponding action in $\mdpstate$, $\mathbf{\hat{R}}$ will be reached in $\hat{h}$ timesteps. We can draw an analogy with a classification problem where the network should learn to classify $(\mdpstate, \hat{h}, \mathbf{\hat{R}})$ to its corresponding label $\action_i$.
+PCN's neural network has an output for each action $\action_i \in \mathcal{A}$. Each output represents the confidence the network has that, by taking the corresponding action in $\mdpstate$, $\mathbf{\hat{R}}$ will be reached in $\hat{h}$ timesteps. We can draw an analogy with a classification problem where the network should learn to classify $\ltuple \mdpstate, \hat{h}, \mathbf{\hat{R}}\rtuple$ to its corresponding label $\action_i$.
 
 Similar to classification, PCN requires a labeled dataset with training examples to learn a mapping from input to label. However, contrary to classification, the data present in the dataset is not fixed. PCN collects data from the trajectories experienced while exploring the environment. Thus, the dataset improves over time, as we collect increasingly better trajectories.
 
-Concretely, the PCN algorithm is a loop that repeatedly executes 3 main steps:
+Concretely, the PCN algorithm implements an iterative process that repeatedly executes 3 main steps:
 \begin{enumerate}
-    \item Use the current policy to interact with the environment and generate trajectories (see Section~\ref{sec:pcn-policy-exploration}).
-    \item Update the dataset to incorporate these new trajectories and prun the least interesting trajectories in terms of returns (see Section~\ref{sec:pcn-building-dataset}).
+    \item Use the current policy to interact with the environment and generate trajectories (see Section~\ref{sec:pcn-policy-exploration}). Initially, use a random policy to fill the dataset with random trajectories.
+    \item Update the dataset to incorporate these new trajectories and prune the least interesting trajectories in terms of returns (see Section~\ref{sec:pcn-building-dataset}).
     \item Update the policy by training it on the updated dataset (see Section~\ref{sec:pcn-continuous}).
 \end{enumerate}
 
 \subsection{Building and updating the dataset}
 \label{sec:pcn-building-dataset}
 
-Given a trajectory composed of $T$ transitions $(s_0, a_0, \bm{r}_0, s_1), \dots, (s_{T-1}, a_{T-1}, \bm{r}_{T-1}, s_T)$ we can compute, for each transition at timestep $t$, the future discounted return $\bm{R}_t = \sum_{i=t}^T \gamma^i\bm{r}_i$ and the leftover horizon $h_t = T-t$. Since for this trajectory executing action $a_t$ in state $s_t$ resulted in return $\mathbf{R}_t$ in $h_t$ timesteps, we add a datapoint with input $\langle s, \hat{h}, \mathbf{\hat{R}}\rangle = \langle s_t, h_t, \mathbf{R}_t \rangle$ and output $a=a_t$ to the dataset. In other words, when the observed return corresponds to the desired return in that state, then $a_t$ is the optimal action to take.
+Given a trajectory composed of $T$ transitions $\ltuple s_0, a_0, \bm{r}_0, s_1\rtuple, \dots, \ltuple s_{T-1}, a_{T-1}, \bm{r}_{T-1}, s_T\rtuple$ we can compute, for each transition at timestep $t$, the future discounted return $\bm{R}_t = \sum_{i=t}^T \gamma^i\bm{r}_i$ and the leftover horizon $h_t = T-t$. Since for this trajectory executing action $a_t$ in state $s_t$ resulted in return $\mathbf{R}_t$ in $h_t$ timesteps, we add a datapoint with input $\langle s, \hat{h}, \mathbf{\hat{R}}\rangle = \langle s_t, h_t, \mathbf{R}_t \rangle$ and output $a=a_t$ to the dataset. In other words, when the observed return corresponds to the desired return in that state, then $a_t$ is the optimal action to take.
 
-Since we have a fix-sized dataset, adding this trajectory means we need to remove another one. Our aim is to keep trajectories that span different parts of the objective space, such that we can explore as many types of trade-offs as possible. However, to improve the trade-offs we currently have in our dataset, we need to only keep solutions that are close to our current estimate of the Pareto front. Thus, we assign a priority for each trajectory in our dataset that combine two metrics: the \emph{crowding distance}, which measures the distance of a solution with its closest neighbors, and the \emph{l2-norm} with the closest non-dominated solution, which indicates how close the solution is from our current estimate of the Pareto front.
+Since we have a fix-sized dataset, adding this trajectory means we need to remove another one. Our aim is to keep trajectories that span different parts of the objective space, such that we can explore as many types of trade-offs as possible. However, to improve the trade-offs we currently have in our dataset, we need to only keep solutions that are close to our current estimate of the Pareto front. Thus, we assign a priority for each trajectory in our dataset that combines two metrics: the \emph{crowding distance}, which measures the distance of a solution with its closest neighbors, and the \emph{$l_2$-norm} with the closest non-dominated solution, which indicates how close the solution is from our current estimate of the Pareto front.
 
-The dataset is then updated by only keeping the trajectories with the top-$N$ priorities.
+The dataset is then updated by only keeping the trajectories with the top-$N$ priorities, where $N$ is the size of the dataset.
 
 \subsection{Generating trajectories with the current policy}
 \label{sec:pcn-policy-exploration}
 
 In the previous section, we explain how PCN updates the dataset given a trajectory. In this section, we explain how PCN produces said trajectory.
 
-It is unrealistic to expect PCN to reliably produce trajectories with high-valued desired returns when it has only been trained on datapoints originating from random trajectories. Rather, we can expect PCN to produce trajectories with returns in the range of the ones from the current training data. Therefore, if we obtain trajectories reaching high returns, PCN will be able to confidently return high-return policies.
+It is unrealistic to expect PCN to reliably produce trajectories with high-valued desired returns when it has only been trained on datapoints originating from random trajectories. Rather, we expect PCN to produce trajectories with returns in the range of the ones from the current training data. Therefore, if we obtain trajectories reaching high returns, PCN will be able to confidently return high-return policies.
 
-PCN leverages the fact that, due to the generalization capabilities of neural networks, the policies obtained from the network will still be reliable even if the desired return is marginally higher than what is present in the training data. In fact, they will perform similar actions to those in the training data, but lead to a higher return. Thus, we incrementally condition the network on better and better returns, in order to obtain trajectories that extend the boundaries of PCN's current coverage set.
+PCN leverages the fact that, due to the generalization capabilities of neural networks, the policies obtained from the network will still be reliable even if the desired return is marginally higher than what is present in the training data. In fact, they will perform similar actions to those in the training data, but lead to a higher return. Thus, we incrementally condition the network on increasingly higher returns, to obtain trajectories that extend the boundaries of PCN's current coverage set.
 
-More precisely, we randomly select a non-dominated return $\mathbf{R}_{nd}$ and its corresponding horizon $\hat{h}$ from the dataset. By randomly picking a non-dominated return from the entire coverage set we ensure equal chance of improvement to each part of the objective space. To generate trajectories that improve upon $\mathbf{R}_{nd}$, we randomly select an objective $o$ and increase $R_{nd,o}$ by a sample from the uniform distribution $U(0, \sigma_o)$, where $\sigma_o$ is the standard deviation for the selected objective, using all non-dominated returns from the trajectories in the dataset. This then becomes our desired return $\bm{\hat{R}}$. By restricting the improvement to at most $\sigma_o$, $\mathbf{\hat{R}}$ stays in the range of possible achievable returns and, by only modifying one objective at a time, the changes to the network's input compared to the training data are kept at a minimum.
+More precisely, we randomly select a non-dominated return $\mathbf{R}_{nd}$ and its corresponding horizon $\hat{h}$ from the dataset. By randomly picking a non-dominated return from the entire coverage set we ensure equal chance of improvement to each part of the objective space. To generate trajectories that improve upon $\mathbf{R}_{nd}$, we randomly select an objective $o$ and increase $R_{nd,o}$ by a sample from the uniform distribution $\mathcal{U}(0, \sigma_o)$, where $\sigma_o$ is the standard deviation for the selected objective, using all non-dominated returns from the trajectories in the dataset. This then becomes our desired return $\bm{\hat{R}}$. By restricting the improvement to at most $\sigma_o$, $\mathbf{\hat{R}}$ stays in the range of possible achievable returns and, by only modifying one objective at a time, the changes to the network's input compared to the training data are kept at a minimum.
 
 \subsection{Training the network for continuous actions}
 \label{sec:pcn-continuous}
 
-PCN trains the network as a classification problem, where each class represents a different action. Transitions $x= \langle \mdpstate_t, h_t, \momdpreturn_t \rangle, y=\action_t$ are sampled from the dataset, and the ground-truth output $y$ is compared with the predicted output $\hat{y}=\pi(\mdpstate_t, h_t, \momdpreturn_t)$. The predictor (i.e., the policy) is then updated using the cross-entropy loss function:
+PCN trains the network as a classification problem, where each class represents a different action. Transitions $x= \langle \mdpstate_t, h_t, \momdpreturn_t \rangle, y=\action_t$ are sampled from the dataset, and the ground-truth output $y$ is compared with the predicted output $\hat{y}=\pi(\mdpstate_t, h_t, \momdpreturn_t)$. The predictor (i.e., the policy) is then updated using the cross-entropy loss function \cite{shore1980axiomatic}:
 \begin{equation}
     H = -\sum_{\action \in \mathcal{A}}{y_{\action} \log \pi(\action|\mdpstate_t,h_t,\momdpreturn_t)}
 \end{equation}
 where $y_\action = 1$ if $\action = \action_t$ and $y_\action = 0$ otherwise.
 
-While the original PCN algorithm is designed for MOMDPs with discrete actions-spaces, the problem we tackle (see Section~\ref{sec:sars-cov2-momdp}) is defined in terms of a continuous action-space. We thus extend PCN for the continuous action-space setting.
-First, we change the output of the neural network such that there is a single output value for each dimension of the action-space. Since the actions should be bound in the domain of possible actions ($[0,1]$ in the case of \momdpname, see Section~\ref{sec:sars-cov2-momdp}), we apply a tanh non-linearity function on this output.
-Second, the problem becomes a regression problem instead of a classification problem, as the labeled dataset uses continuous labels $y = \mdpaction_t$ instead of categories. We thus use a Mean Squared Error (MSE) loss to update the policy:
+While the original PCN algorithm is designed for MOMDPs with discrete actions-spaces, the problem we tackle (see Section~\ref{sec:sars-cov2-momdp}) is defined in terms of a continuous action-space. We thus extend PCN to the continuous action-space setting.
+We change the output of the neural network such that there is a single output value for each dimension of the action-space. Since the actions should be bound in the domain of possible actions ($[0,1]$ in the case of \momdpname, see Section~\ref{sec:sars-cov2-momdp}), we apply a tanh non-linearity function on each output.
+As such, we have a regression problem instead of a classification problem, as the labeled dataset now uses continuous labels $y = \mdpaction_t$ instead of categories. We thus use a Mean Squared Error (MSE) loss to update the policy:
 
 \begin{equation}
     MSE = \frac{1}{|\mathcal{A}|}\sum_{a \in \mathcal{A}}{(\hat{y}_a - y_a)^2}
 \end{equation}
 
-Since learning the full set of Pareto-efficient policies $\Pi^*$ requires that the policies $\pi^* \in \Pi^*$ are deterministic stationary policies \cite{roijers2013survey}, we use the output $\mathbf{\hat{y}}$ as action at execution time. However, PCN improves its policy through exploration, by continuously updating its dataset with better trajectories. Thus, at training time, we follow \cite{lillicrap2015continuous} and use a stochastic policy by adding random noise sampled from a Normal distribution to the action: 
+Since learning the full set of Pareto-efficient policies $\Pi^*$ requires that the policies $\pi^* \in \Pi^*$ are deterministic stationary policies \cite{roijers2013survey}, we use the output $\mathbf{\hat{y}}$ as action at execution time. However, PCN improves its policy through exploration, by continuously updating its dataset with better trajectories. Thus, at training time, we use a stochastic policy by adding random noise to the action \cite{lillicrap2015continuous}: 
 \begin{equation}
     \mdpaction_t = \pi(\mdpstate_t, h_t, \momdpreturn_t) + \eta s \text { with } s \sim \mathcal{N},
 \end{equation}
 
-where $\eta$ is a hyper-parameter defining the magnitude of noise to be added.
+where $\mathcal{N}$ is the standard Normal distribution and $\eta$ is a hyper-parameter defining the magnitude of noise to be added.
 
 \subsection{Coping with stochastic transitions}
 \label{sec:pcn-stochastic}
 
-PCN trains its policy on a dataset that is collected by executing trajectories. It assumes that reenacting a transition from the dataset leads to the same episodic return. When the transition function $\mathcal{T}$ of the MOMDP is deterministic, the whole trajectory can be faithfully reenacted, which guarantees that we obtain the same return. Combined with the fact that PCN's policy is deterministic at execution time, conditioning the policy on a target episodic return is equivalent to conditioning it on the V-value $\mathbf{V}$.
+PCN trains its policy on a dataset that is collected by executing trajectories. It assumes that reenacting a transition from the dataset leads to the same episodic return. When the transition function $\mathcal{T}$ of the MOMDP is deterministic, the whole trajectory can be faithfully reenacted, which guarantees the same return. Combined with the fact that PCN's policy is deterministic at execution time, conditioning the policy on a target episodic return is equivalent to conditioning it on the V-value $\mathbf{V}$.
 
-However, when $\mdptransition$ is stochastic we lose this guarantee. We cope with this issue by adding small random noise to $\mathbb{R}_t$ when performing gradient descent, which reduces the risk of overfitting~\cite{zur2009noise}. Moreover, although the Binomial model of \momdpname\ is stochastic, the possible next-states resulting from a state-action pair are similar to each other. This allows PCN to compensate if $\momdpreward_t = \momdprewardfn(\mdpstate_t, \mdpaction_t, \mdpstate_{t+1})$ is somewhat worse than expected. This is confirmed by our experiments (see Section~\ref{sec:experiments}), where the coverage sets learned by PCN on the ODE model and on the Binomial model are similar.
+However, when $\mdptransition$ is stochastic this can no longer be guaranteed. To mitigate this, we add small random noise to $\mathbb{R}_t$ when performing gradient descent, which reduces the risk of overfitting~\cite{zur2009noise}. Moreover, while the Binomial \momdpname\ model is stochastic, the possible next-states resulting from a state-action pair are similar to each other. This allows PCN to compensate if $\momdpreward_t = \momdprewardfn(\mdpstate_t, \mdpaction_t, \mdpstate_{t+1})$ is somewhat worse than expected. This is confirmed in our experiments (see Section~\ref{sec:experiments}), where the coverage sets learned by PCN on the ODE model and on the Binomial model are similar.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
