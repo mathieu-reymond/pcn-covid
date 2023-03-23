@@ -75,6 +75,7 @@
 %vectorial action
 \newcommand{\mdpaction}{\mathbf{a}}
 % the 6 social contact matrices
+\newcommand{\ctotal}{C}
 \newcommand{\chome}{C_{\text{home}}}
 \newcommand{\cwork}{C_{\text{work}}}
 \newcommand{\ctransport}{C_{\text{transport}}}
@@ -84,6 +85,8 @@
 % tentative momdp env name
 \newcommand{\momdpname}{MOBelCov}
 %other params
+\newcommand{\proportionalityfactor}{q}
+\newcommand{\agegroup}{k}
 \newcommand{\agegroups}{K}
 \newcommand{\budget}{\bm{b}}
 
@@ -305,10 +308,82 @@ Figure~\ref{fig:paretofrontmetrics} shows a visual representation of the hypervo
 \label{sec:sars-cov2-momdp}
 \subsection{Stochastic compartment model for SARS-CoV-2}
 \label{sec:sars-cov2-momdp_model}
-To evaluate non-pharmaceutical interventions, we consider the compartmental model presented by Abrams et al., that was used to investigate exit strategies in Belgium after the first epidemic wave of SARS-CoV-2~\cite{abrams2021modelling}. This model concerns a discrete-time stochastic model, that considers an age-structured population. The model generalises a standard SEIR model\footnote{A standard SEIR model divides the population into four different states, i.e., susceptible, exposed, infectious and recovered individuals.}, extended to capture the different stages of disease spread and history that are associated with SARS-CoV-2 (i.e., pre-symptomatic, asymptomatic, symptomatic with mild symptoms and symptomatic with severe symptoms) and to represent the stages associated with severe disease, i.e., hospitalisation, admission to the intensive care unit (ICU) and death. 
-As we consider an age-structured population, we consider this extended SEIR structure for $\agegroups = 10$ age groups,  i.e., $[0-10), [10-20), [20-30), [30-40), [40-50), [50-60), [60-70), [70-80), [80-90), [90,100+)$. Contacts of the different age-groups, which impact the propagation rate of the epidemic, are modeled using social contact matrices. We define a social contact matrix for 6 different social environments: $\chome, \cwork, \ctransport, \cschool, \cleisure, \cother$, for the home, work, transport, school, leisure, other environments respectively.
-The model is described by a set of ordinary differential equations (ODEs), as described in SI.
-By formulating this set of differential equations a chain-binomial process (as detailed in SI) we can obtain stochastic trajectories from this model~\cite{abrams2021modelling}.
+To evaluate non-pharmaceutical interventions, we consider the compartmental model presented by Abrams et al., that was used to investigate exit strategies in Belgium after the first epidemic wave of SARS-CoV-2~\cite{abrams2021modelling}. This model concerns a discrete-time stochastic model, that considers an age-structured population. The model generalises a standard SEIR model\footnote{A standard SEIR model divides the population into four different states, i.e., susceptible, exposed, infectious and recovered individuals.}, extended to capture the different stages of disease spread and history that are associated with SARS-CoV-2 (i.e., pre-symptomatic, asymptomatic, symptomatic with mild symptoms and symptomatic with severe symptoms) and to represent the stages associated with severe disease, i.e., hospitalisation, admission to the intensive care unit (ICU) and death.
+
+A visual representation of the model is depicted in Fig~\ref{fig:ode_mdel}. It shows the different compartments, as well as the flow rates at which individuals move from one compartment to another.
+
+These flow rates are defined by a set of ordinary differential equations, which are outlined as follows:
+
+\begin{align*}
+\frac{d\textbf{S}(t)}{dt} & = -\lambda(t)(\textbf{S})(t), \\
+%
+\frac{d\textbf{E}(t)}{dt} & = \lambda(t)(\textbf{S})(t) - \gamma \textbf{E}(t), \\
+%
+\frac{d\textbf{I}^{presym}(t)}{dt} & = \gamma \textbf{E}(t) - \theta \textbf{I}^{presym}(t), \\
+%
+\frac{d\textbf{I}^{asym}(t)}{dt} & = \theta p \textbf{I}^{presym}(t) - \delta_{1} \textbf{I}^{asym}(t), \\
+%
+\frac{d\textbf{I}^{mild}(t)}{dt} & = \theta (1 - p) \textbf{I}^{presym}(t) - \{ \psi + \omega_{2} \} \textbf{I}^{mild}(t), \\
+%
+\frac{d\textbf{I}^{sev}(t)}{dt} & = \psi \textbf{I}^{mild}(t) - \omega \textbf{I}^{sev}(t), \\
+%
+\frac{d\textbf{I}^{hosp}(t)}{dt} & = \phi_{1} \omega \textbf{I}^{sev}(t) - \{ \delta_{3} + \tau_{1} \} \textbf{I}^{hosp}(t), \\
+%
+\frac{d\textbf{I}^{icu}(t)}{dt} & = (1 - \phi_1) \omega \textbf{I}^{sev}(t) - \{ \delta_{4} + \tau_{2} \} \textbf{I}^{icu}(t), \\
+%
+\frac{d\textbf{D}(t)}{dt} & = \tau_{1} \textbf{I}^{hosp}(t) - \tau_{2} \textbf{I}^{icu}(t), \\
+%
+\frac{d\textbf{R}(t)}{dt} & = \delta_{1} \textbf{I}^{asym}(t) + \delta_{2} \textbf{I}^{mild}(t) + \delta_{3} \textbf{I}^{hosp}(t) + \delta_{4} \textbf{I}^{icu}(t)
+\end{align*}
+%
+where, for example, $\textbf{S} = (S_{1}(t), S_{2}(t), ..., S_{\agegroup}(t))^{T}$ is the vector representing the susceptible members of the population of each age group $\agegroup$ at time $t$. 
+
+In this set of ordinary differential equations, each state variable represents a vector over all age groups for a particular compartment at time $t$. Infection dynamics are governed by an age-specific force of infection $\foi$:
+
+\begin{equation}
+    \foi(\agegroup,t) = \sum_{\agegroup'=1}^{\agegroups}\beta(\agegroup,\agegroup')I_{\agegroup'}(t),
+\end{equation}
+%
+where $\agegroup$ is the respective age group of a total of $\agegroups$ age groups, and $\beta(\agegroup,\agegroup')$ is the time-invariant transmission rate that encodes the average per capita rate at which an infectious individual in age group $\agegroup$ makes an effective contact with a susceptible individual in age group $\agegroup'$, per unit of time.
+
+As we consider an age-structured population, we consider this extended SEIR structure for $\agegroups = 10$ age groups,  i.e., $[0-10), [10-20), [20-30), [30-40), [40-50), [50-60), [60-70), [70-80), [80-90), [90,100+)$. Contacts of the different age-groups, which impact the propagation rate of the epidemic, are modeled using social contact matrices. We define a social contact matrix for 6 different social environments: $\chome, \cwork, \ctransport, \cschool, \cleisure, \cother$, for the home, work, transport, school, leisure, other environments respectively. The social contact matrix across all social environments is defined as:
+
+\begin{equation}
+    \ctotal = \chome + \cwork + \ctransport + \cschool + \cleisure + \cother
+\end{equation}
+
+Under the social contact hypothesis \cite{wallinga2006using}, we have that:
+%
+\begin{equation}
+\beta(\agegroup,\agegroup') = \proportionalityfactor \cdot \ctotal(\agegroup,\agegroup'),
+\end{equation}
+%
+where $\proportionalityfactor$ is a proportionality factor.
+
+Following \citet{abrams2021modelling}, we rely on distinct social contact matrices for symptomatic and asymptomatic individuals, respectively $\ctotal_{s}$ and $\ctotal_{a}$. Therefore, it is possible to define the transmission rates for both symptomatic and asymptomatic individuals as follows:
+
+\begin{equation}
+\boldsymbol{\beta}_{s}(\agegroup, \agegroup) = \proportionalityfactor_{s} \cdot C_{s}(\agegroup, \agegroup'),    
+\end{equation}
+and
+\begin{equation}
+\boldsymbol{\beta}_{a}(\agegroup, \agegroup') = \proportionalityfactor_{a} \cdot C_{a}(\agegroup, \agegroup').  
+\end{equation}
+
+Moreover, the age-dependent force of infection can be defined as follows:
+
+\begin{equation}
+    \boldsymbol{\lambda}(t) = \boldsymbol{\beta}_{a} \times \{ \textbf{I}^{presym}(t) + \textbf{I}^{asym}(t) \} +
+    \boldsymbol{\beta}_{s} \times \{ \textbf{I}^{mild}(t) + \textbf{I}^{sev}(t) \},
+\end{equation}
+%
+where $\boldsymbol{\lambda}(t) = (\lambda(1, t), \lambda(1, t), ..., \lambda(\agegroups, t))$. For all further information about the different compartments and parameters please refer to the work of \citet{abrams2021modelling}.
+
+By formulating the set of differential equations defined above, as a chain-binomial, we can obtain stochastic trajectories from this model \cite{bailey1975mathematical}. A chain-binomial model assumes a stochastic model where infected individuals are generated by some underlying probability distribution. For the stochastic model we consider a time interval $(t, t +h]$, where $h$ is defined as the length between two consecutive time points. Similar to \citet{abrams2021modelling}, in this work we set $h = \frac{1}{24}$.
+
+\todo{epi friends, please check} Time- and age-dependent behavioral changes introduce substantial uncertainty regarding the outcome of an outbreak. To evaluate intervention strategies that modulate such behavioral changes, the use of stochastic epidemiological models is warranted \cite{abrams2021modelling}. Moreover, the effect of stochasticity is most pronounced when studying the initial growth of an epidemic \cite{britton2009epidemic}, be it during its emergence, or when implementing deconfinement strategies.
+
+\todo{This is why we use the binomial model in our analysis.}
 
 \subsection{Interventions strategies}
 \label{sec:interventions}
@@ -486,7 +561,9 @@ where $\mathcal{N}$ is the standard Normal distribution and $\eta$ is a hyper-pa
 
 PCN trains its policy on a dataset that is collected by executing trajectories. It assumes that reenacting a transition from the dataset leads to the same episodic return. When the transition function $\mathcal{T}$ of the MOMDP is deterministic, the whole trajectory can be faithfully reenacted, which guarantees the same return. Combined with the fact that PCN's policy is deterministic at execution time, conditioning the policy on a target episodic return is equivalent to conditioning it on the V-value $\mathbf{V}$.
 
-However, when $\mdptransition$ is stochastic this can no longer be guaranteed. To mitigate this, we add small random noise to $\mathbb{R}_t$ when performing gradient descent, which reduces the risk of overfitting~\cite{zur2009noise}. Moreover, while the Binomial \momdpname\ model is stochastic, the possible next-states resulting from a state-action pair are similar to each other. This allows PCN to compensate if $\momdpreward_t = \momdprewardfn(\mdpstate_t, \mdpaction_t, \mdpstate_{t+1})$ is somewhat worse than expected. This is confirmed in our experiments (see Section~\ref{sec:experiments}), where the coverage sets learned by PCN on the ODE model and on the Binomial model are similar.
+However, when $\mdptransition$ is stochastic this can no longer be guaranteed. To mitigate this, we add small random noise to $\mathbb{R}_t$ when performing gradient descent, which reduces the risk of overfitting~\cite{zur2009noise}. Moreover, while the \momdpname\ model is stochastic, the variation is entirely due to the sampling of the binomial distributions in the binomial-chain. While this variation accumulates over time, the time window we consider for each timestep (i.e., one week) is short enough that the accumulation stays limited. Thus, the possible next-states resulting from a state-action pair are similar to each other. This allows PCN to compensate if $\momdpreward_t = \momdprewardfn(\mdpstate_t, \mdpaction_t, \mdpstate_{t+1})$ is worse than expected.
+
+Although we use a stochastic model to cope with the uncertainty of the outcome of the outbreak, it is possible to deterministically evaluate the set of ordinary differential equations that define the model. We assess the validity of our approach by executing PCN on this deterministic variant, and observing similar performance as with the \momdpname\ model. \todo{Results are available in SI}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
