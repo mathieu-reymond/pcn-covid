@@ -46,6 +46,7 @@
         \addplot[mark=none, orange] table [x=dates, y=i_icu_new, col sep=comma] {data/transitions/arh/binomial/budget_None/policies-transitions/48/run_0.csv};
         \addplot[mark=none, red] table [x=dates, y=d_new, col sep=comma] {data/transitions/arh/binomial/budget_None/policies-transitions/48/run_0.csv};
         \end{groupplot}
+        \node[rectangle,draw] (r) at (0,0) {$b=2$};
         % GROUP WITH RIGHT Y-AXIS: ACTIONS (P_W, P_S, P_L)
         \begin{groupplot}[
         group style={
