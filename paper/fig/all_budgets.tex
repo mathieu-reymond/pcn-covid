@@ -31,19 +31,19 @@
         \label{i_icu_new}
         \addplot[mark=none, red] table [x=dates, y=d_new, col sep=comma] {data/transitions/arh/binomial/budget_2/policies-transitions/72/run_0.csv};
         \label{d_new}
-        \nextgroupplot[scaled y ticks=false]
+        \nextgroupplot[scaled y ticks=false, title=$\text{PCN}_{b=3}$]
         \addplot[mark=none, cyan] table [x=dates, y=i_hosp_new, col sep=comma] {data/transitions/arh/binomial/budget_3/policies-transitions/36/run_0.csv};
         \addplot[mark=none, orange] table [x=dates, y=i_icu_new, col sep=comma] {data/transitions/arh/binomial/budget_3/policies-transitions/36/run_0.csv};
         \addplot[mark=none, red] table [x=dates, y=d_new, col sep=comma] {data/transitions/arh/binomial/budget_3/policies-transitions/36/run_0.csv};
-        \nextgroupplot[scaled y ticks=false]
+        \nextgroupplot[scaled y ticks=false, title=$\text{PCN}_{b=4}$]
         \addplot[mark=none, cyan] table [x=dates, y=i_hosp_new, col sep=comma] {data/transitions/arh/binomial/budget_4/policies-transitions/25/run_0.csv};
         \addplot[mark=none, orange] table [x=dates, y=i_icu_new, col sep=comma] {data/transitions/arh/binomial/budget_4/policies-transitions/25/run_0.csv};
         \addplot[mark=none, red] table [x=dates, y=d_new, col sep=comma] {data/transitions/arh/binomial/budget_4/policies-transitions/25/run_0.csv};
-        \nextgroupplot[scaled y ticks=false]
+        \nextgroupplot[scaled y ticks=false, title=$\text{PCN}_{b=5}$]
         \addplot[mark=none, cyan] table [x=dates, y=i_hosp_new, col sep=comma] {data/transitions/arh/binomial/budget_5/policies-transitions/41/run_0.csv};
         \addplot[mark=none, orange] table [x=dates, y=i_icu_new, col sep=comma] {data/transitions/arh/binomial/budget_5/policies-transitions/41/run_0.csv};
         \addplot[mark=none, red] table [x=dates, y=d_new, col sep=comma] {data/transitions/arh/binomial/budget_5/policies-transitions/41/run_0.csv};
-        \nextgroupplot[scaled y ticks=false]
+        \nextgroupplot[scaled y ticks=false, title=$\text{PCN}_{b=\infty}$]
         \addplot[mark=none, cyan] table [x=dates, y=i_hosp_new, col sep=comma] {data/transitions/arh/binomial/budget_None/policies-transitions/48/run_0.csv};
         \addplot[mark=none, orange] table [x=dates, y=i_icu_new, col sep=comma] {data/transitions/arh/binomial/budget_None/policies-transitions/48/run_0.csv};
         \addplot[mark=none, red] table [x=dates, y=d_new, col sep=comma] {data/transitions/arh/binomial/budget_None/policies-transitions/48/run_0.csv};
@@ -77,9 +77,9 @@
         \label{p_s}
         \addplot[mark=none, dashed, darkgray] table [x=dates, y=p_l, col sep=comma] {data/transitions/arh/binomial/budget_2/policies-transitions/72/run_0.csv};
         \label{p_l}
-        \addlegendimage{/pgfplots/refstyle=i_hosp_new}\addlegendentry{$p_w$}
-        \addlegendimage{/pgfplots/refstyle=i_icu_new}\addlegendentry{$p_l$}
-        \addlegendimage{/pgfplots/refstyle=d_new}\addlegendentry{$p_s$}
+        \addlegendimage{mark=none, cyan}\addlegendentry{$p_w$}
+        \addlegendimage{mark=none, orange}\addlegendentry{$p_s$}
+        \addlegendimage{mark=none, red}\addlegendentry{$p_l$}
         \addlegendimage{/pgfplots/refstyle=p_w}\addlegendentry{{daily new hosp}}
         \addlegendimage{/pgfplots/refstyle=p_s}\addlegendentry{{daily new ICU}}
         \addlegendimage{/pgfplots/refstyle=p_l}\addlegendentry{{daily deaths}}
