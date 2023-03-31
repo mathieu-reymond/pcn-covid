@@ -1,7 +1,7 @@
 \ProvidesPackage{plotpolicies}
 \usepackage{ifthen}
 
-\newcommand{\plotPolicies}[2]{
+\newcommand{\plotPolicies}[3]{
 \begin{tikzpicture}
 \pgfplotsset{
       scale only axis,
@@ -20,23 +20,29 @@
             horizontal sep=0pt,
             vertical sep=0pt
         },
-      width=4.75cm,
+      width=6.75cm,
       axis y line*=left,
       xlabel={time},
-      ylabel={people},
+      ylabel={individuals},
+      y tick label style={/pgf/number format/sci}
     ]
+    \def\allruns{}
     \pgfplotsforeachungrouped \p in {#1, ..., #2} {
-    \edef\tmp{
+      \eappto\allruns{
         \noexpand\nextgroupplot[scaled y ticks=false]
-        \noexpand\addplot[mark=none, cyan] table [x=dates, y=i_hosp_new, col sep=comma] {data/ode/policy_\p.csv};
-        \noexpand\label{i_hosp_new}
-        \noexpand\addplot[mark=none, orange] table [x=dates, y=i_icu_new, col sep=comma] {data/ode/policy_\p.csv};
-        \noexpand\label{i_icu_new}
-        \noexpand\addplot[mark=none, red] table [x=dates, y=d_new, col sep=comma] {data/ode/policy_\p.csv};
-        \noexpand\label{d_new}
+      }
+      \pgfplotsforeachungrouped \r in {0, ..., 9} {
+        \eappto\allruns{
+          \noexpand\addplot[mark=none, cyan!50] table [x=dates, y=i_hosp_new, col sep=comma] {data/transitions/arh/binomial/budget_#3/policies-transitions/\p/run_\r.csv};
+          \noexpand\label{i_hosp_new}
+          \noexpand\addplot[mark=none, orange!50] table [x=dates, y=i_icu_new, col sep=comma] {data/transitions/arh/binomial/budget_#3/policies-transitions/\p/run_\r.csv};
+          \noexpand\label{i_icu_new}
+          \noexpand\addplot[mark=none, red!50] table [x=dates, y=d_new, col sep=comma] {data/transitions/arh/binomial/budget_#3/policies-transitions/\p/run_\r.csv};
+          \noexpand\label{d_new}
         }
-        \tmp
+      }
     }
+    \allruns
     \end{groupplot}
     
     \begin{groupplot}[
@@ -50,7 +56,7 @@
             horizontal sep=0pt,
             vertical sep=0pt
         },
-      width=4.75cm,
+      width=6.75cm,
       axis y line*=right,
       axis x line=none,
       ymax=1.1,
@@ -59,19 +65,23 @@
       legend columns=3, 
       legend cell align=left,
     ]
-    \pgfplotsforeachungrouped \p in {#1, ..., #2}{
-    \edef\tmp{
+    \def\allruns{}
+    \pgfplotsforeachungrouped \p in {#1, ..., #2} {
+      \eappto\allruns{
         \noexpand\nextgroupplot[scaled y ticks=false]
-        \noexpand\addplot[mark=none, dashed, blue] table [x=dates, y=p_w, col sep=comma] {data/ode/policy_\p.csv};
-        \noexpand\label{p_w}
-        \noexpand\addplot[mark=none, dashed, magenta] table [x=dates, y=p_s, col sep=comma] {data/ode/policy_\p.csv};
-        \noexpand\label{p_s}
-        \noexpand\addplot[mark=none, dashed, darkgray] table [x=dates, y=p_l, col sep=comma] {data/ode/policy_\p.csv};
-        \noexpand\label{p_l}
+      }
+      \pgfplotsforeachungrouped \r in {0, ..., 9} {
+        \eappto\allruns{
+          \noexpand\addplot[mark=none, dashed, blue!50] table [x=dates, y=p_w, col sep=comma] {data/transitions/arh/binomial/budget_#3/policies-transitions/\p/run_\r.csv};
+          \noexpand\label{p_w}
+          \noexpand\addplot[mark=none, dashed, magenta!50] table [x=dates, y=p_s, col sep=comma] {data/transitions/arh/binomial/budget_#3/policies-transitions/\p/run_\r.csv};
+          \noexpand\label{p_s}
+          \noexpand\addplot[mark=none, dashed, darkgray!50] table [x=dates, y=p_l, col sep=comma] {data/transitions/arh/binomial/budget_#3/policies-transitions/\p/run_\r.csv};
+          \noexpand\label{p_l}
         }
-        \tmp
+      }
     }
-    \label{p_l}
+    \allruns
     \end{groupplot}
   \end{tikzpicture}
 }

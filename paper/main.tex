@@ -22,10 +22,13 @@
 \usepackage{float}          % force figure positioning in text
 \usepackage{chngcntr}       % counters per section
 \usepackage{tikz}
-\usepackage{pgfplots}
+\usepackage{pgfplots,etoolbox}
 \usepackage{comment}
+\usetikzlibrary{external}
 \usepgfplotslibrary{dateplot, groupplots, fillbetween}
 \pgfplotsset{compat=newest}
+\tikzexternalize[prefix=cache/]
+
 \usepackage{plotpolicies}   % custom package to plot policy-executions
 
 % default \cite to use parentheses
@@ -273,11 +276,11 @@ To counterpoise these shortcomings, we evaluate our work using an additional met
 %
 where $||.||_{\infty}$, the L-infinity norm, returns the magnitude of the largest entry of a vector.
 
-The main disadvantage of this metric is that we need the true Pareto front to compute it, which is unknown for our MOMDP (see Section~\ref{sec:sars-cov2-momdp}). To still gain insights from our learned policies, we approximate the true Pareto front using the non-dominated policies across all runs.
+The main disadvantage of this metric is that we need the true Pareto front to compute it, which is unknown for our MOMDP (see Sec.~\ref{sec:sars-cov2-momdp}). To still gain insights from our learned policies, we approximate the true Pareto front using the non-dominated policies across all runs.
 
 We note that the $\varepsilon$-indicator metric is quite pessimistic, as it measures worst-case performance~\cite{zintgraf2015}, i.e., it will still report low performance as long as a single point of the Pareto front is incorrectly modeled, even if all the other points are covered. As such, we also use the $I_{\varepsilon-mean}$ \cite{reymond2022pcn} which measures the \emph{average} $\varepsilon$ distance of the solutions in $\mathcal{F}$ with respect to the evaluated coverage set.
 
-Figure~\ref{fig:paretofrontmetrics} shows a visual representation of the hypervolume and $\varepsilon$ metrics in two dimensions.
+Fig.~\ref{fig:paretofrontmetrics} shows a visual representation of the hypervolume and $\varepsilon$ metrics in two dimensions.
 
 \begin{figure}[t!]
     \centering
@@ -310,7 +313,7 @@ Figure~\ref{fig:paretofrontmetrics} shows a visual representation of the hypervo
 \label{sec:sars-cov2-momdp_model}
 To evaluate non-pharmaceutical interventions, we consider the compartmental model presented by Abrams et al., that was used to investigate exit strategies in Belgium after the first epidemic wave of SARS-CoV-2~\cite{abrams2021modelling}. This model concerns a discrete-time stochastic model, that considers an age-structured population. The model generalises a standard SEIR model\footnote{A standard SEIR model divides the population into four different states, i.e., susceptible, exposed, infectious and recovered individuals.}, extended to capture the different stages of disease spread and history that are associated with SARS-CoV-2 (i.e., pre-symptomatic, asymptomatic, symptomatic with mild symptoms and symptomatic with severe symptoms) and to represent the stages associated with severe disease, i.e., hospitalisation, admission to the intensive care unit (ICU) and death.
 
-A visual representation of the model is depicted in Fig~\ref{fig:ode_mdel}. It shows the different compartments, as well as the flow rates at which individuals move from one compartment to another.
+A visual representation of the model is depicted in Fig~\ref{fig:compartment_model}. It shows the different compartments, as well as the flow rates at which individuals move from one compartment to another.
 
 These flow rates are defined by a set of ordinary differential equations, which are outlined as follows:
 
@@ -395,7 +398,7 @@ We consider a contact reduction function that imposes a proportional reduction o
     \hat{C}(p_w, p_s, p_l) = \chome + p_w (\cwork + \ctransport) + p_s \cschool + p_l (\cleisure + \cother)
 \end{equation}
 
-We denote $\hat{C}_t$ the social contact matrix at timestep $t$, resulting from the reduction function $\hat{C}$. Secondly, we assume that compliance to the interventions is gradual and model this using a logistic compliance function (see details in SI).
+We denote $\hat{C}_t$ the social contact matrix at timestep $t$, resulting from the reduction function $\hat{C}$. Secondly, we assume that compliance to the interventions is gradual and model this using a logistic compliance function (see details in Sec.~\ref{sec:compliance-function}).
 
 \subsection{The \momdpname\ Environment}
 \begin{figure}[t!]
@@ -431,13 +434,13 @@ We denote $\hat{C}_t$ the social contact matrix at timestep $t$, resulting from 
     \end{tikzpicture}
     
     \caption{Schematic diagram of the compartmental model for SARS-CoV-2 presented by \citet{abrams2021modelling} which is used to derive the MOMDP.}
-    \label{fig:ode_mdel}
+    \label{fig:compartment_model}
 \end{figure}
-In order to apply multi-objective reinforcement learning, we construct the \momdpname\ MOMDP based on the epidemiological model introduced in Section~\ref{sec:sars-cov2-momdp_model} and graphically depicted in Figure~\ref{fig:ode_mdel}. Moreover, we consider a finite-horizon setting where we simulate the compartment model for a fixed number of weeks.
+In order to apply multi-objective reinforcement learning, we construct the \momdpname\ MOMDP based on the epidemiological model introduced in Sec.~\ref{sec:sars-cov2-momdp_model} and graphically depicted in Fig.~\ref{fig:compartment_model}. Moreover, we consider a finite-horizon setting where we simulate the compartment model for a fixed number of weeks.
 
-\paragraph{Action-space:} Our actions concern the installment of a social contact matrix with a particular reduction resulting from the reduction function $\hat{C}$ (see Section~\ref{sec:interventions}). To this end, we use the proportional reduction parameters $p_w, p_s, p_l$ defined in Section~\ref{sec:interventions}. Thus, each $\mdpaction \in \mdpactionspace$ is a 3-dimensional continuous vector in $[0,1]^3$ (i.e., $\mdpaction = [p_{w}, p_{s}, p_{l}]$) which impacts the social contact matrix according to Equation~\ref{eq:scm}.
+\paragraph{Action-space:} Our actions concern the installment of a social contact matrix with a particular reduction resulting from the reduction function $\hat{C}$ (see Sec.~\ref{sec:interventions}). To this end, we use the proportional reduction parameters $p_w, p_s, p_l$ defined in Sec.~\ref{sec:interventions}. Thus, each $\mdpaction \in \mdpactionspace$ is a 3-dimensional continuous vector in $[0,1]^3$ (i.e., $\mdpaction = [p_{w}, p_{s}, p_{l}]$) which impacts the social contact matrix according to Eq.~\ref{eq:scm}.
 
-\paragraph{Transition function:} The model defined by \citet{abrams2021modelling} utilises a model transition probability $M(\mdpstate_m' \mid \mdpstate_m, \hat{C}, p_{w}, p_{s}, p_{l})$ (see SI for details on $M$), where $\hat{C}(p_{w}, p_{s}, p_{l})$ returns the currently installed social contact matrix, that progresses the epidemiological model in one timestep.
+\paragraph{Transition function:} The model defined by \citet{abrams2021modelling} utilises a model transition probability $M(\mdpstate_m' \mid \mdpstate_m, \hat{C}, p_{w}, p_{s}, p_{l})$ (see Sec.~\ref{sec:binomial-model} for details on $M$), where $\hat{C}(p_{w}, p_{s}, p_{l})$ returns the currently installed social contact matrix, that progresses the epidemiological model in one timestep.
 We use this function as the transition function in \momdpname.
 
 In a classical MDP, executing an action $\action_t$ in any state $\state_t$ leads to a next state $\state_{t+1}$ according to the transition function $\mdptransition$. At every timestep $t$, the agent is free to choose the action to perform. In our case, this potentially results in a different restriction $[p_{w}, p_{s}, p_{l}]$ every week. However, we argue that in the context of mitigation policies, consistency is important and policies that impose changes too frequently will be hard to adhere to.
@@ -455,7 +458,7 @@ Finally, for each timestep $t$, our transition function $\mdptransition$ uses th
 %
 for each age group $k \in \{1, \ldots, \agegroups\}$, where $S$ encodes the members of the population who are susceptible to infection and $E$ encodes the members of the population who have been exposed to COVID-19. Moreover, $I^{presym}$, $I^{asym}$, $I^{mild}$, $I^{hosp}$, $I^{icu}$ denote the members of the population infected with COVID-19 and are, respectively, presymptomatic, asymptomatic, mildly symptomatic, hospitalised, or in the ICU. Finally, $H^{new}_k$ represents the number of newly hospitalised individuals in age group $k$.
 
-We parameterize the epidemiological model using the mean of the posteriors as specified by \citet{abrams2021modelling} (details in SI).
+We parameterize the epidemiological model using the mean of the posteriors as specified by \citet{abrams2021modelling} (details in Sec.~\ref{sec:compartment-model-parameters}).
 
 The second element of the tuple consists of the social contact matrix $\hat{C}_t$ that is currently in place. The reason to incorporate it in the state-space is two-fold. First, \citet{abrams2021modelling} define a compliance function, simulating the time people need to get used to the new rules set in place. As such, during the simulated week, there is a gradual shift from the current $\hat{C}_t$ to the new social contact matrix, $\hat{C}_{t+1}$. As such, we need to maintain the current $\hat{C}_t$, to maintain a Markovian environment.
 
@@ -487,7 +490,7 @@ The resulting difference matrix quantifies the average frequency of contacts mis
 \begin{equation}
     \mdprewardfn_{\text{SB}}(\mdpstate,\mdpaction,\mdpstate') = \sum_{i=1}^{\agegroups}\sum_{j=1}^{\agegroups}(\hat{C}-C)_{ij}S_i(\mdpstate)S_j(\mdpstate) + \sum_{i=1}^{\agegroups}\sum_{j=1}^{\agegroups}(\hat{C}-C)_{ij}R_i(\mdpstate)R_j(\mdpstate),
 \end{equation}
-where $S_k(\mdpstate)$ represents the number of susceptible individuals in age group $k$ in state $\mdpstate$ and $R_k$ represents the number of recovered individuals in age group $k$ in state $\mdpstate$. In Section~\ref{sec:experiments}, we optimize PCN on two different variants for the multi-objective reward function: $[\mdprewardfn_\text{ARH}, \mdprewardfn_\text{SB}]$ and $[\mdprewardfn_\text{ARI}, \mdprewardfn_\text{SB}]$, to study the impact of these distinct attack rate quantities.
+where $S_k(\mdpstate)$ represents the number of susceptible individuals in age group $k$ in state $\mdpstate$ and $R_k$ represents the number of recovered individuals in age group $k$ in state $\mdpstate$. In Sec.~\ref{sec:experiments}, we optimize PCN on two different variants for the multi-objective reward function: $[\mdprewardfn_\text{ARH}, \mdprewardfn_\text{SB}]$ and $[\mdprewardfn_\text{ARI}, \mdprewardfn_\text{SB}]$, to study the impact of these distinct attack rate quantities.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -507,9 +510,9 @@ Similar to classification, PCN requires a labeled dataset with training examples
 
 Concretely, the PCN algorithm implements an iterative process that repeatedly executes 3 main steps:
 \begin{enumerate}
-    \item Use the current policy to interact with the environment and generate trajectories (see Section~\ref{sec:pcn-policy-exploration}). Initially, use a random policy to fill the dataset with random trajectories.
-    \item Update the dataset to incorporate these new trajectories and prune the least interesting trajectories in terms of returns (see Section~\ref{sec:pcn-building-dataset}).
-    \item Update the policy by training it on the updated dataset (see Section~\ref{sec:pcn-continuous}).
+    \item Use the current policy to interact with the environment and generate trajectories (see Sec.~\ref{sec:pcn-policy-exploration}). Initially, use a random policy to fill the dataset with random trajectories.
+    \item Update the dataset to incorporate these new trajectories and prune the least interesting trajectories in terms of returns (see Sec.~\ref{sec:pcn-building-dataset}).
+    \item Update the policy by training it on the updated dataset (see Sec.~\ref{sec:pcn-continuous}).
 \end{enumerate}
 
 \subsection{Building and updating the dataset}
@@ -541,8 +544,8 @@ PCN trains the network as a classification problem, where each class represents 
 \end{equation}
 where $y_\action = 1$ if $\action = \action_t$ and $y_\action = 0$ otherwise.
 
-While the original PCN algorithm is designed for MOMDPs with discrete actions-spaces, the problem we tackle (see Section~\ref{sec:sars-cov2-momdp}) is defined in terms of a continuous action-space. We thus extend PCN to the continuous action-space setting.
-We change the output of the neural network such that there is a single output value for each dimension of the action-space. Since the actions should be bound in the domain of possible actions ($[0,1]$ in the case of \momdpname, see Section~\ref{sec:sars-cov2-momdp}), we apply a tanh non-linearity function on each output.
+While the original PCN algorithm is designed for MOMDPs with discrete actions-spaces, the problem we tackle (see Sec.~\ref{sec:sars-cov2-momdp}) is defined in terms of a continuous action-space. We thus extend PCN to the continuous action-space setting.
+We change the output of the neural network such that there is a single output value for each dimension of the action-space. Since the actions should be bound in the domain of possible actions ($[0,1]$ in the case of \momdpname, see Sec.~\ref{sec:sars-cov2-momdp}), we apply a tanh non-linearity function on each output.
 As such, we have a regression problem instead of a classification problem, as the labeled dataset now uses continuous labels $y = \mdpaction_t$ instead of categories. We thus use a Mean Squared Error (MSE) loss to update the policy:
 
 \begin{equation}
@@ -563,7 +566,7 @@ PCN trains its policy on a dataset that is collected by executing trajectories. 
 
 However, when $\mdptransition$ is stochastic this can no longer be guaranteed. To mitigate this, we add small random noise to $\mathbb{R}_t$ when performing gradient descent, which reduces the risk of overfitting~\cite{zur2009noise}. Moreover, while the \momdpname\ model is stochastic, the variation is entirely due to the sampling of the binomial distributions in the binomial-chain. While this variation accumulates over time, the time window we consider for each timestep (i.e., one week) is short enough that the accumulation stays limited. Thus, the possible next-states resulting from a state-action pair are similar to each other. This allows PCN to compensate if $\momdpreward_t = \momdprewardfn(\mdpstate_t, \mdpaction_t, \mdpstate_{t+1})$ is worse than expected.
 
-Although we use a stochastic model to cope with the uncertainty of the outcome of the outbreak, it is possible to deterministically evaluate the set of ordinary differential equations that define the model. We assess the validity of our approach by executing PCN on this deterministic variant, and observing similar performance as with the \momdpname\ model. \todo{Results are available in SI}.
+Although we use a stochastic model to cope with the uncertainty of the outcome of the outbreak, it is possible to deterministically evaluate the set of ordinary differential equations that define the model. We assess the validity of our approach by executing PCN on this deterministic variant, and observing similar performance as with the \momdpname\ model. We show the results in Sec.~\ref{sec:cs-ode-vs-binomial}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -571,7 +574,7 @@ Although we use a stochastic model to cope with the uncertainty of the outcome o
 \label{sec:experiments}
 Our goal is to use PCN to learn deconfinment strategies in the \momdpname\ environment. We aim to learn policies that balance between the epidemiological objective of minimising the attack rate (i.e., $\mdprewardfn_\text{ARH}$ for hospitalisation and $\mdprewardfn_\text{ARI}$ for infection) and the social burden (i.e., $\mdprewardfn_\text{SB}$) experienced by the population population due to the implement mitigation measures. To this end, we consider two cases for the vectorial reward functions $[\mdprewardfn_\text{ARH}, \mdprewardfn_\text{SB}]$ and $[\mdprewardfn_\text{ARI}, \mdprewardfn_\text{SB}]$, to learn and analyse policies under different targets with respect to the considered attack rate.
 
-To conduct this analysis, we apply our extension of PCN for continuous action-spaces on the \momdpname\ model. As explained in Section~\ref{sec:pcn-stochastic}, we extend PCN for environments with stochastic transitions.
+To conduct this analysis, we apply our extension of PCN for continuous action-spaces on the \momdpname\ model. As explained in Sec.~\ref{sec:pcn-stochastic}, we extend PCN for environments with stochastic transitions.
 
 Conform to \citet{abrams2021modelling}, the simulation starts on the 1st of March 2020, by seeding a number of infections in the population. Two weeks later, on the 14th of March, the Belgian government initiated a full lockdown. This is implemented by fixing the actions $p_w, p_s, p_l$ to $0.2, 0, 0.1$ respectively. This lockdown ended on the 4th of May 2020, at which point the government decided on a multi-phase exit strategy to incrementally reduce teleworking, reopen schools and allow leisure activities, such as the re-opening of bars and the cultural sector. It is from this day onward that PCN aims to learn policies for diverse exit strategies, compromising between the total number of daily hospitalizations and the total number of contacts lost as a proxy for social burden. The simulation lasts throughout the school holidays (from 01/07/2020 to 31/08/2020). Schools are closed during the school holidays, which is simulated by setting $p_s = 0$, regardless of the corresponding value outputted by the policy, i.e., during periods of school closure $p_s$ is ignored.
 
@@ -580,7 +583,7 @@ We draw the analogy with the multi-phase exit strategy established by the Belgia
 
 To evaluate the quality of the policies learned by PCN, we compare PCN to a baseline. This baseline consists of a set of 100 fixed policies, that iterate over all the possible social restriction levels, with values ranging between 0 and 1. Concretely, each policy uses a fixed proportional reduction $p_w=p_l=p_s=u, u\sim\mathcal{U}(0, 1)$ throughout the episode. In other words, the fixed policies directly operate in a fine-grained manner on the whole contact reduction function $\hat{C}$. This allows us to obtain a strong baseline for potential exit strategies over the objective space. We note that while such fixed policies are a feasible approach, they do not scale well in terms of action and objective spaces and they will not be able to provide an adaptive restriction level, which is what we aim to provide using PCN.
 
-All experiments are averaged over 5 runs. The hyper-parameters and the neural network architecture can be found in the SI.
+All experiments are averaged over 10 runs. The hyper-parameters and the neural network architecture can be found in Sec.s~\ref{sec:pcn-hyperparameters} and Sec.~\ref{sec:pcn-architecture}, respectively.
 
 
 \subsection{Learned coverage set}
@@ -589,7 +592,7 @@ All experiments are averaged over 5 runs. The hyper-parameters and the neural ne
     \centering
     \input{fig/arh_binomial_both}
     \caption{The Pareto front of policies discovered by PCN using \momdpname, showing the different compromises between the number of hospitalizations and the number of lost contacts. On the right, we show, for each budget setting (colored, subscript indicates budget) the coverage set learned by the best performing run. On the left, we show an interpolated average of the coverage sets learned by the different runs, with the shaded regions corresponding to the standard deviation. For comparison, the basline is displayed on both plots (in black). As the budget increases, so does the size of the coverage set learnt by PCN. Changes are most noticeable in the less restrictive trade-offs in terms of social burden.}
-    \label{fig:pf-binomal-arh-budgets}
+    \label{fig:pf-binomial-arh-budgets}
 \end{figure}
 
 \begin{table}[t]
@@ -602,11 +605,11 @@ All experiments are averaged over 5 runs. The hyper-parameters and the neural ne
     \label{tab:coverage-set}
   \end{table}
 
-We learn a coverage set (see Figure~\ref{fig:pf-binomal-arh-budgets}) that ranges from imposing minimal restrictions to enforcing many restrictions. In Figure~\ref{fig:pf-binomal-arh-budgets}, we display on the right the coverage set of the best-performing run in terms of hypervolume, for each budget setting. On the left, we show an interpolated average of the coverage sets learned by the different runs.
+We learn a coverage set (see Fig.~\ref{fig:pf-binomial-arh-budgets}) that ranges from imposing minimal restrictions to enforcing many restrictions. In Fig.~\ref{fig:pf-binomial-arh-budgets}, we display on the right the coverage set of the best-performing run in terms of hypervolume, for each budget setting. On the left, we show an interpolated average of the coverage sets learned by the different runs.
 
-Regardless of the imposed budget, we notice that the coverage sets discovered by PCN almost completely dominate the coverage set of the baseline, demonstrating that there are better alternatives to the fixed policies. This is most evident in the compromising policies, where one has to carefully choose when to remove social restrictions while at the same time minimizing the impact on daily new hospitalizations. In these scenarios, PCN learns policies that drastically reduce the total number of new hospitalizations (e.g., more than $20000$) for the same social burden. We analyse the executions of such policies in Figure~\ref{fig:policy-execution} (middle plot), that shows a flattened hospitalization curve, with a gradual increase of social freedom during the school holidays such that the curve of the epidemic is flattened and gradually decreases over time.
+Regardless of the imposed budget, we notice that the coverage sets discovered by PCN almost completely dominate the coverage set of the baseline, demonstrating that there are better alternatives to the fixed policies. This is most evident in the compromising policies, where one has to carefully choose when to remove social restrictions while at the same time minimizing the impact on daily new hospitalizations. In these scenarios, PCN learns policies that drastically reduce the total number of new hospitalizations (e.g., more than $20000$) for the same social burden. We analyse the executions of such policies in Fig.~\ref{fig:policy-execution} (middle plot), that shows a flattened hospitalization curve, with a gradual increase of social freedom during the school holidays such that the curve of the epidemic is flattened and gradually decreases over time.
 
-Interestingly, we notice that the most restrictive policy (i.e. the one that prioritizes hospitalizations over social burden, see Figure~\ref{fig:policy-execution}, bottom plot) still starts to gradually increase $p_w$ and $p_l$ from the end of July onward. This is because by then, the epidemic has mostly faded out, and it is safe to reduce social restrictions. The timing of this reduction is important as reducing restrictions too soon can lead to a new wave. PCN learns the impact of its decisions over time, and correctly infers the timing at which restrictions can be safely lifted.
+Interestingly, we notice that the most restrictive policy (i.e. the one that prioritizes hospitalizations over social burden, see Fig.~\ref{fig:policy-execution}, bottom plot) still starts to gradually increase $p_w$ and $p_l$ from the end of July onward. This is because by then, the epidemic has mostly faded out, and it is safe to reduce social restrictions. The timing of this reduction is important as reducing restrictions too soon can lead to a new wave. PCN learns the impact of its decisions over time, and correctly infers the timing at which restrictions can be safely lifted.
 
 Finally, the top plot shows that, without imposing social restrictions, the number of hospitalisations peaks on the 15th of June. By the beginning of July, the epidemic has spread out over the majority of the population \todo{herd immunity?}, and the number of admissions at the hospital has been reduced to a fraction of the number of hospitalisations at the peak. Thus, without social restrictions, we do not take advantage of the natural decrease of social contacts due to school holidays, as the majority of the population has already been infected before the start of the holidays. \todo{mention the slow decrease of $p_l$ during the summer? This is simply due to PCN not having found better}
 
@@ -620,11 +623,11 @@ Finally, the top plot shows that, without imposing social restrictions, the numb
     \label{fig:policy-execution}
 \end{figure}
 
-Figure~\ref{fig:pf-binomal-arh-budgets} demonstrates that the budget impacts the learnt coverage set. In general, an increase of budget is associated with an increasingly better coverage set, as policies learned using a higher budget dominate the ones learned with a lower budget. This is to be expected, as a higher budget give the agent more freedom to change its actions as the epidemic progresses. However, we also notice that this increase of coverage sets is not necessarily gradual. Between the run with a budget of 2 and budget of 3, the difference in coverage set seems marginal. \todo{insight}.
+Fig.~\ref{fig:pf-binomial-arh-budgets} demonstrates that the budget impacts the learnt coverage set. In general, an increase of budget is associated with an increasingly better coverage set, as policies learned using a higher budget dominate the ones learned with a lower budget. This is to be expected, as a higher budget give the agent more freedom to change its actions as the epidemic progresses. However, we also notice that this increase of coverage sets is not necessarily gradual. % Between the run with a budget of 2 and budget of 3, the difference in coverage set seems marginal. \todo{insight}.
 
-Moreover, we observe that the difference is concentrated around the less restrictive policies in terms of social burden. We hypothesise that this region contains the most complex policies, as these try to maintain as much social freedom as possible, while containing the number of hospitalisations. In these cases, the timing of the actions greatly correlate with the timing and duration of the peak of the epidemic, and a higher budget allows for more fine-grained control about managing this timing. To confirm this, we select, for each budget setting, the solution where the difference in performance is most noticeable, corresponding to the solutions with a total number of hospitalisations around $80000$. We plot the execution of the corresponding policies in Figure~\ref{fig:pe-binomial-arh-budgets} and analyse their impact in terms of social burden. First, we observe that the lower-budget policies are unable to reduce the social restrictions past the peak of the epidemic. In contrast, the setting with no budget restrictions finely controls the restrictions as the epidemic progresses, completely removing restrictions by the end of the wave. Second, we note that the policy with a budget of 5 ressembles the execution of the one without restrictions. However, due to its budget, the policy is unable to progressively reduce the restrictions and instead resorts to a halfway compromise. \todo{corresponding SB numbers.} Compared to this specific region of the coverage set, the difference in performance between different budget settings seems marginal around the extremas. At the extremas, the policies are less complex (e.g., business-as-usual, resulting in the same action executed throughout the episode) and are thus less impacted by the budget restrictions.
+Moreover, we observe that the difference is concentrated around the less restrictive policies in terms of social burden. We hypothesise that this region contains the most complex policies, as these try to maintain as much social freedom as possible, while containing the number of hospitalisations. In these cases, the timing of the actions greatly correlate with the timing and duration of the peak of the epidemic, and a higher budget allows for more fine-grained control about managing this timing. To confirm this, we select, for each budget setting, the solution where the difference in performance is most noticeable, corresponding to the solutions with a total number of hospitalisations around $80000$ (which is in the middle of the range of possible hospitalisations, as can be seen in Fig.~\ref{fig:pf-binomial-arh-budgets}). We plot the execution of the corresponding policies in Fig.~\ref{fig:pe-binomial-arh-budgets} and analyse their impact in terms of social burden. First, we observe that the lower-budget policies are unable to reduce the social restrictions past the peak of the epidemic. In contrast, the setting with no budget restrictions finely controls the restrictions as the epidemic progresses, completely removing restrictions by the end of the wave. Second, we note that the policy with a budget of 5 ressembles the execution of the one without restrictions. However, due to its budget, the policy is unable to progressively reduce the restrictions and instead resorts to a halfway compromise. Compared to this specific region of the coverage set, the difference in performance between different budget settings seems marginal around the extremas. At the extremas, the policies are less complex (e.g., business-as-usual, resulting in the same action executed throughout the episode) and are thus less impacted by the budget restrictions.
 
-Finally, we observe that, while the extremas deliver similar trade-offs for any of the chosen budgets, these trade-offs differ for the setting without budget restrictions. Indeed, in this setting, PCN does not learn the most extreme policies with respect to restrictions, even though there are no constraints on the action-set. As explained in Section~\ref{sec:pcn-policy-exploration}, PCN searches for increasingly better solutions using a stochastic policy. Thus, at every timestep, the action can change compared to the previous one. Continuously outputting the same action (e.g., no social restrictions) becomes a complicated task. In comparison, for the settings with a limited budget, the action stays the same as the previous one once the budget has been spent. As such, it is easier to learn the most extreme policies. Thus, in the specific case where we impose no budget, the freedom of action actually hinders PCN's search, for certain regions of the rweard-space.
+Finally, we observe that, while the extremas deliver similar trade-offs for any of the chosen budgets, these trade-offs differ for the setting without budget restrictions. Indeed, in this setting, PCN does not learn the most extreme policies with respect to restrictions, even though there are no constraints on the action-set. As explained in Sec.~\ref{sec:pcn-policy-exploration}, PCN searches for increasingly better solutions using a stochastic policy. Thus, at every timestep, the action can change compared to the previous one. Continuously outputting the same action (e.g., no social restrictions) becomes a complicated task. In comparison, for the settings with a limited budget, the action stays the same as the previous one once the budget has been spent. As such, it is easier to learn the most extreme policies. Thus, in the specific case where we impose no budget, the freedom of action actually hinders PCN's search, for certain regions of the rweard-space.
 
 \begin{figure}
     \centering
@@ -639,7 +642,7 @@ Finally, we observe that, while the extremas deliver similar trade-offs for any 
 
 Next, we assess the difference in coverage sets when optimizing on $\mdprewardfn_\text{ARH}$ versus $\mdprewardfn_\text{ARI}$. Although these reward functions have a different scale (there are more infected persons than hospitalised ones), our experiments show that infections and hospitalizations are correlated. This is expected, as during the initial phase of the epidemic, limited immunity was present in the population (i.e., limited natural immunity and no vaccines), which induces a tight coupling between infection and hospitalisation cases. This is confirmed in Table~\ref{tab:coverage-set}. In this table, we show the different performance metrics (hypervolume, $I_\varepsilon$, $I_{\varepsilon-mean}$) with respect to the objectives $[\mdprewardfn_\text{ARH}, \mdprewardfn_\text{SB}]$. The table is split in two parts. The left-side shows the different performance metrics, for PCN using $[\mdprewardfn_\text{ARH}, \mdprewardfn_\text{SB}]$ as optimization criterions. The right-side shows the same performance metrics, but with PCN using $[\mdprewardfn_\text{ARI}, \mdprewardfn_\text{SB}]$ as optimization criterions.
 
-Even with the $\mdprewardfn_\text{ARI}$, the increased budget shows an increase in hypervolume in terms of hospitalisations. Moreover, those hypervolumes are close to the ones trained on $\mdprewardfn_\text{ARH}$, indicating that their coverage sets are similar. However, regardless of the imposed budget, the hypervolumes are slightly worse. This is to be expected, since those experiments are not directly optimising on $\mdprewardfn_\text{ARH}$. We make similar conclusions for $I_\varepsilon$. For budgets 2, 3 and 5, the difference between the worst-performing policy for the $\mdprewardfn_\text{ARI}$ variant and the $\mdprewardfn_\text{ARH}$ is less than $0.01$, indicating less than $1\%$ difference in return values between the two variants when comparing their worst-performing policy. As an exception, we notice that PCN without budget restrictions results in better performance across every metric for the $\mdprewardfn_\text{ARI}$ variant. Still, due to the high standard deviation of the no-budget, $\mdprewardfn_\text{ARH}$ setting, we do not believe this difference is meaningfull. \todo{some kind of meaningful conclusion}
+Even with the $\mdprewardfn_\text{ARI}$, the increased budget shows an increase in hypervolume in terms of hospitalisations. Moreover, those hypervolumes are close to the ones trained on $\mdprewardfn_\text{ARH}$, indicating that their coverage sets are similar. However, regardless of the imposed budget, the hypervolumes are slightly worse. This is to be expected, since those experiments are not directly optimising on $\mdprewardfn_\text{ARH}$. We make similar conclusions for $I_\varepsilon$. For budgets 2, 3 and 5, the difference between the worst-performing policy for the $\mdprewardfn_\text{ARI}$ variant and the $\mdprewardfn_\text{ARH}$ is less than $0.01$, indicating less than $1\%$ difference in return values between the two variants when comparing their worst-performing policy. As an exception, we notice that PCN without budget restrictions results in better performance across every metric for the $\mdprewardfn_\text{ARI}$ variant. Still, due to the high standard deviation of the no-budget, $\mdprewardfn_\text{ARH}$ setting, we do not believe this difference is meaningful. \todo{some kind of meaningful conclusion}
 
 \subsection{Robustness of policy executions}
 \label{sec:pcn-robustness}
@@ -654,7 +657,7 @@ Even with the $\mdprewardfn_\text{ARI}$, the increased budget shows an increase 
     \label{tab:pcn-robustness}
 \end{table}
 
-The dataset of trajectories that PCN is trained on is pruned over time to keep only the most relevant trajectories. The returns of these trajectories are used in Figure~\ref{fig:pf-binomal-arh-budgets} to show the learned coverage set. Each of these returns can be used as desired return for policy execution. We now assess the robustness of the executed policies, by comparing the return obtained after executing the policy with the corresponding target return. For each run, we execute the policy $10$ times and compute the $I_\varepsilon$ and $I_{\varepsilon-mean}$ metrics with respect to the coverage set learned during the run. We show that the executed policies reliably obtain returns that are similar to the desired return used to condition PCN.
+The dataset of trajectories that PCN is trained on is pruned over time to keep only the most relevant trajectories. The returns of these trajectories are used in Fig.~\ref{fig:pf-binomial-arh-budgets} to show the learned coverage set. Each of these returns can be used as desired return for policy execution. We now assess the robustness of the executed policies, by comparing the return obtained after executing the policy with the corresponding target return. For each run, we execute the policy $10$ times and compute the $I_\varepsilon$ and $I_{\varepsilon-mean}$ metrics with respect to the coverage set learned during the run. We show that the executed policies reliably obtain returns that are similar to the desired return used to condition PCN.
 
 Results are shown in Table~\ref{tab:pcn-robustness}. The $I_\varepsilon$ indicators shows that, regardless of the budget, the decision maker will lose at worst a $0.050$ normalized return in any of the objectives. On average, it will lose $0.010$ normalized returns, i.e., on average, the return obtained by executing a policy will either result in an additional $1441$ hospitalisations than expected, or result in $12$ additional social contacts lost. Moreover, we emphasize that the learned coverage set contains the non-dominated returns encountered over the whole training procedure. Since the \momdpname\ model is stochastic, for multiple executions of the same policy, the executions kept in the coverage sets are the ones for which the samples from the binomial-chain resulted in a better progression of the epidemic than average. Thus, we expect our policy-executions to be close to the target selected from the coverage set, but not on exactly target. Based on this analysis, we conclude that the policies trained by PCN are robust and produce returns as close as possible from their chosen target.
 
@@ -675,122 +678,33 @@ Making decisions on how to mitigate epidemics has important ethical implications
 
 In this work, we focus on the clinical outcomes of the intervention strategies and use the reduced contacts as proxy for the quality of life lost. This could be extended into more formal economic evaluations by assessing the health and monetary benefits and costs of different interventions for various stakeholders. The COVID-19 pandemic demonstrated the broad impact of infectious diseases on sectors outside health care. This stresses the need to capture a societal and thus multi-objective perspective in the decision making process on public health and health care interventions. Our learned policies confirm this, showing that focusing solely on reducing the number of hospitalizations results in taking drastic measures -- more than a thousand social interactions lost per person over the span of 4 months -- that may have a long-lasting impact on the population.
 
-To conclude, we show that multi-objective reinforcement learning can be used to learn a wide set of high-quality policies on real-world problems, providing the decision maker with insightful and diverse alternatives, and showing the impact of taking extreme measures.
+\todo{Although we use an age-structured compartment model, with social contact matrices to model social interactions, this remains a model that evaluates the progression of the pandemic as an aggregated process over the population. Individual-based models could provide more detailed and localized policies, potentially further improving the quality of possible trade-offs, and would provide an interesting avenue for future work. However, due to the computational cost of simulating such models, and the number of interactions required by reinforcement learning in general, this remains a challenging problem.}
+
+\todo{Moreover, although we are able to interpret and analyse the obtained policies and their corresponding trade-offs, as we can plot the Pareto front for 2 objectives, this approach cannot be used for problems with more objectives. Defining interpretation and visualization tools for many-objective problems is necessary if we want to include additional objectives for our problem.}
+
+\todo{Additionally, PCN is able to cope with model stochasticity, because the stochasticity is limited. In settings where the stochasticity is more pronounced, e.g., designing policies to control the initial outbreak of an epidemic, further methodological extensions are warranted.}
+
+\todo{Finally, while we have focused on social burden as a trade-off for hospitalisations, our approach can be used for related problems, involving different compromises, such as balancing the number of lost schooldays with respect to new infections in schools \cite{torneri2021controlling}, contact tracing effort versus its effect \cite{willem2021impact}, the impact of antivirals on the epidemic versus resistance to antivirals \cite{torneri2020prospect}, or the cost of universal testing versus its impact on the epidemic \cite{libin2021assessing}.}
+
+To conclude, we show that multi-objective reinforcement learning can be used to learn a wide set of high-quality policies on real-world problems, providing the decision maker with insightful and diverse alternatives, and showing the impact of taking extreme measures. \todo{This can be done for realistic settings, where we budget the number of changes of social reductions, such that the policies are practical and can be deployed in real-life scenarios.}
 
 \bibliographystyle{unsrtnat}
 \bibliography{references}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\begin{comment}
 \appendix
 \counterwithin{figure}{section}
 \counterwithin{table}{section}
 \counterwithin{equation}{section}
 
-\section{Compartmental model for SARS-CoV-2}
-In this work we utilise the compartmental model proposed by \citet{abrams2021modelling} and extend the model to a multi-objective Markov decision process (MOMDP). The MOMDP used in this work is outlined in the main paper. However, we describe the details of the underlying compartmental model used to model the spread of COVID-19 below. 
+\section{Stochastic Compartmental Model}
+\label{sec:binomial-model}
+In this work we utilise the compartmental model proposed by \citet{abrams2021modelling} and extend the model to a multi-objective Markov decision process (MOMDP). Fig.~\ref{fig:compartment_model} shows a visual depiction of the compartment model. The flows of the deterministic model are defined by a set of ordienary differential equations, outlined in Sec.~\ref{sec:sars-cov2-momdp_model}.
 
-\begin{figure}[h]
-    \centering
-     \begin{tikzpicture}
-     \draw (0.0pt, 0.0pt)node[fill=green!20, thick, minimum height=0.6cm,minimum width=0.6cm, draw](0){$\textbf{S}$};
-     \draw (60.0pt, 0.0pt)node[fill=orange!20, thick, minimum height=0.6cm,minimum width=0.6cm, draw](1){$\textbf{E}$};
-     \draw (120.0pt, 0.0pt)node[fill=red!20, thick, minimum height=0.6cm,minimum width=0.6cm, draw](2){$\textbf{I}^{presym}$};
-     \draw (180.0pt, 10.0pt)node[fill=red!20, thick, minimum height=0.6cm,minimum width=0.6cm, draw](3){$\textbf{I}^{asym}$};
-     \draw (170.0pt, -30.0pt)node[fill=red!20, thick, minimum height=0.6cm,minimum width=0.6cm, draw](4){$\textbf{I}^{mild}$};
-     \draw (170.0pt, -70.0pt)node[fill=red!20, thick, minimum height=0.6cm,minimum width=0.6cm, draw](5){$\textbf{I}^{sev}$};
-     \draw (230.0pt, -50.0pt)node[fill=blue!20, thick, minimum height=0.6cm,minimum width=0.6cm, draw](6){$\textbf{I}^{hosp}$};
-     \draw (230.0pt, -90.0pt)node[fill=blue!20, thick, minimum height=0.6cm,minimum width=0.6cm, draw](7){$\textbf{I}^{icu}$};
-     \draw (300.0pt, -50.0pt)node[fill=orange!50, thick, minimum height=0.6cm,minimum width=0.6cm, draw](8){$\textbf{R}$};
-     \draw (300.0pt, -90.0pt)node[fill=purple!50, thick, minimum height=0.6cm,minimum width=0.6cm, draw](9){$\textbf{D}$};
-     
-     %\path[->] (6) edge[dotted, bend right = 50]
-     \path[->] (0) edge[] node[above]{$\boldsymbol{\lambda}(t)$} (1);
-     \path[->] (1) edge[] node[above]{$\gamma$} (2);
-     \path[->] (2) edge[] node[below]{$\textbf{p}\theta$} (3);
-     \path[->] (2) edge[] node[near end, below left]{$(1-\textbf{p})\theta$} (4);
-     \path[->] (4) edge[] node[left]{$\boldsymbol{\psi}$} (5);
-     \path[->] (5) edge[] node[near end, below left]{$(1-\phi_{1})\boldsymbol{\omega}$} (7);
-     \path[->] (5) edge[] node[above]{$\phi_{1}\boldsymbol{\omega}$} (6);
-     \path[->] (7) edge[] node[near end, below right]{$\boldsymbol{\delta}_{4}$} (8);
-     \path[->] (7) edge[] node[above]{$\boldsymbol{\tau}_{2}$} (9);
-     \path[->] (6) edge[] node[above]{$\boldsymbol{\delta}_{3}$} (8);
-     \path[->] (6) edge[] node[near start, below left]{$\boldsymbol{\tau}_{1}$} (9);
-     \path[->] (3) edge[bend left = 30] node[above right]{$\delta_{1}$} (8);
-     \path[->] (4) edge[bend left = 30] node[above left]{$\boldsymbol{\delta}_{2}$} (8);
-      
-    \end{tikzpicture}
-    
-    \caption{Schematic diagram of the compartmental model for SARS-CoV-2 presented by \citet{abrams2021modelling} which is used to derive the MOMDP.
-    }
-    \label{fig:ode_mdel}
-\end{figure}
-
-We utilise an adapted SEIR mathematical compartmental model proposed by Abrams et al. to contruct the MOBelCov MOMDP with deterministic and stochastic state transitions. In this model members of the population are susceptible to infection when they are in compartment $\textbf{S}$\footnote{Boldface vector notation is used to denote the multiple age groups for each compartment.}. If an individual comes into contact with an infections individual then they move to the exposed compartment, $\textbf{E}$, at a time specific rate, $\boldsymbol{\lambda} (t)$. After a period of time an exposed individual becomes infectious, where they move to the pre-symptomatic compartment, $\textbf{I}^{presym}$, at rate $\gamma$. Once infected, individuals develop mild symptoms, $\textbf{I}^{mild}$ , with probability $1 - \textbf{p}$ or do not develop any symptoms, $\textbf{I}^{asym}$, with probability $\textbf{p}$, where asymptomatic individuals recover, $\textbf{R}$, at rate $\delta_{1}$. Individuals who experience symptoms can suffer from a mild infection, $\textbf{I}^{mild}$, and recover at rate $\boldsymbol{\delta}_{2}$, or they suffer from a more severe infection, $\textbf{I}^{sev}$, at a rate $\boldsymbol{\psi}$. Individuals with a severe infection are then transferred to a hospital for treatment, $\textbf{I}^{hosp}$ with probability $\phi_{1}$. However, some individuals become critically ill and are transferred directly to the intensive care unit (ICU) with probability $1 - \psi_{1}$. Individuals in the hospital, $\textbf{I}^{hosp}$ and $\textbf{I}^{icu}$, recover at rate $\boldsymbol{\delta}_{3}$ or $\boldsymbol{\delta}_{4}$ and die at rate $\boldsymbol{\tau}_{3}$ and $\boldsymbol{\tau}_{4}$ respectively. Figure \ref{fig:ode_mdel} outlines the compartmental model defined by Abrams et al.~\cite{abrams2021modelling}.
-
-\subsection{Deterministic Compartmental Model}
-\label{sec:deterministic_comp_model}
-The flows of the deterministic model are defined by a set of ordinary differential equations, which are outlined as follows:
-
-\begin{align*}
-\frac{d\textbf{S}(t)}{dt} & = -\lambda(t)(\textbf{S})(t), \\
-%
-\frac{d\textbf{E}(t)}{dt} & = \lambda(t)(\textbf{S})(t) - \gamma \textbf{E}(t), \\
-%
-\frac{d\textbf{I}^{presym}(t)}{dt} & = \gamma \textbf{E}(t) - \theta \textbf{I}^{presym}(t), \\
-%
-\frac{d\textbf{I}^{asym}(t)}{dt} & = \theta p \textbf{I}^{presym}(t) - \delta_{1} \textbf{I}^{asym}(t), \\
-%
-\frac{d\textbf{I}^{mild}(t)}{dt} & = \theta (1 - p) \textbf{I}^{presym}(t) - \{ \psi + \omega_{2} \} \textbf{I}^{mild}(t), \\
-%
-\frac{d\textbf{I}^{sev}(t)}{dt} & = \psi \textbf{I}^{mild}(t) - \omega \textbf{I}^{sev}(t), \\
-%
-\frac{d\textbf{I}^{hosp}(t)}{dt} & = \phi_{1} \omega \textbf{I}^{sev}(t) - \{ \delta_{3} + \tau_{1} \} \textbf{I}^{hosp}(t), \\
-%
-\frac{d\textbf{I}^{icu}(t)}{dt} & = (1 - \phi_1) \omega \textbf{I}^{sev}(t) - \{ \delta_{4} + \tau_{2} \} \textbf{I}^{icu}(t), \\
-%
-\frac{d\textbf{D}(t)}{dt} & = \tau_{1} \textbf{I}^{hosp}(t) - \tau_{2} \textbf{I}^{icu}(t), \\
-%
-\frac{d\textbf{R}(t)}{dt} & = \delta_{1} \textbf{I}^{asym}(t) + \delta_{2} \textbf{I}^{mild}(t) + \delta_{3} \textbf{I}^{hosp}(t) + \delta_{4} \textbf{I}^{icu}(t)
-\end{align*}
-
-where, for example, $\textbf{S} = (S_{1}(t), S_{2}(t), ..., S_{k}(t))^{T}$ is the vector representing the susceptible members of the population of each age group $k$ at time $t$. 
-
-In this set of ordinary differential equations, each state variable represents a vector over all age groups for a particular compartment at time $t$.
-Infection dynamics are governed by an age-specific force of infection $\foi$:
-\begin{equation}
-    \foi(k,t) = \sum_{k'=1}^{K}\beta(k,k')I_{k'}(t),
-\end{equation}
-where $k$ is the respective age group of a total of K age groups, and $\beta(k,k')$ is the time-invariant transmission rate that encodes the average per capita rate at which an infectious individual in age group $k$ makes an effective contact with a susceptible individual in age group $k'$, per unit of time. 
-
-Under the social contact hypothesis \cite{wallinga2006using}, we have that:
-\begin{equation}
-\beta(k,k') = q \cdot C(k,k'),
-\end{equation}
-where q is a proportionality factor and the matrix $C$ denotes the social mixing behaviour within and between different age groups in the population, and is referred to as a social contact matrix. %(TODO: add appropriate reference).
-Following \citet{abrams2021modelling}, we rely on distinct social contact matrices for symptomatic and asymptomatic individuals, respectively $C_{s}$ and $C_{a}$. Therefore it is possible to define the transmission rates for both symptomatic and asymptomatic individuals as follows:
-
-\begin{equation}
-\boldsymbol{\beta}_{s}(k, k') = q_{s} \cdot C_{s}(k, k'),    
-\end{equation}
-and
-\begin{equation}
-\boldsymbol{\beta}_{a}(k, k') = q_{a} \cdot C_{a}(k, k').  
-\end{equation}
-Moreover, the age-dependent force of infection can be defined as follows:
-\begin{equation}
-    \boldsymbol{\lambda}(t) = \boldsymbol{\beta}_{a} \times \{ \textbf{I}^{presym}(t) + \textbf{I}^{asym}(t) \} +
-    \boldsymbol{\beta}_{s} \times \{ \textbf{I}^{mild}(t) + \textbf{I}^{sev}(t) \},
-\end{equation}
-where $\boldsymbol{\lambda}(t) = (\lambda(1, t), \lambda(1, t), ..., \lambda(K, t))$. For all further information about the different compartments and parameters please refer to the work of \citet{abrams2021modelling}
-
-To create a version of MOBelCov with a deterministic transition function, $M$, we focus on the deterministic model proposed by \citet{abrams2021modelling}. Given that the transitions within the compartmental model are deterministic it is possible to utilise the highlighted model transitions for MOBelCov. Applying the contact matrix $\hat{C}$ to the model state $s_{m}$ progresses the model for one timestep and returns a new compartmental model state $s'_{m}$. Given $s_{m}$ and $\hat{C}$, the  deterministic compartmental model returns $s'_{m}$ with probability of $1$. Therefore, it is possible to use this process as a deterministic transition function, $M$, for MOBelCov. 
-
-\subsection{Stochastic Compartmental Model}
 Intervening in the spread of the virus by, for example, reducing social contacts or government interventions introduces uncertainty in the further course of the outbreak. Therefore, to understand how this uncertainty affect the spread of the disease we introduce a stochastic component model which can model the uncertainty generated by interventions in social contacts. 
 
-By formulating the set of differential equations defined above, as a chain-binomial, we can obtain stochastic trajectories from this model \cite{bailey1975mathematical}. A chain-binomal model assumes a stochastic model where infected individuals are generated by some underlying probability distribution. For the stochastic model we consider a time interval $(t, t +h]$, where $h$ is defined as the length between two consecutive time points. Similar to \citet{abrams2021modelling}, in this work we set $h = \frac{1}{24}$. \citet{abrams2021modelling} define the set of differential equations as a chain binomial as follows:
+By formulating the set of differential equations defined in Sec.~\ref{sec:sars-cov2-momdp_model}, as a chain-binomial, we can obtain stochastic trajectories from this model \cite{bailey1975mathematical}. A chain-binomial model assumes a stochastic model where infected individuals are generated by some underlying probability distribution. For the stochastic model we consider a time interval $(t, t +h]$, where $h$ is defined as the length between two consecutive time points. Similar to \citet{abrams2021modelling}, in this work we set $h = \frac{1}{24}$. \citet{abrams2021modelling} define the set of differential equations as a chain binomial as follows:
 
 \begin{align*}
 \textbf{S}_{t+h} (k) & = \textbf{S}_{t} (k) - \textbf{E}_{new, t+h}(k),\\
@@ -842,29 +756,30 @@ p^{*}_t (k) & = 1 - exp \left[ -h \sum^{K}_{k' = 1} \beta_{asym}(k, k')\{ \textb
 \textbf{R}^{icu}_{new, t+h} (k) & \sim Binomial\left( \textbf{I}^{icu}_{t}(k), 1 - exp\{-h\delta_{4}(k) \} \right).
 \end{align*}
 
-Given MOBelCov also calculates new hospitalisations, $\textbf{H}^{new}$, we define $\textbf{H}^{new}$ for the stochastic compartmental model as follows:
+Given \momdpname\ also calculates new hospitalisations, $\textbf{H}^{new}$, we define $\textbf{H}^{new}$ for the stochastic compartmental model as follows:
 \[
 \textbf{H}^{new}_{t+h}(k) = \textbf{H}^{new}_{t}(k) + \textbf{I}^{hosp}_{new, t+h} (k).
 \]
 For more details on this model and the chain-binomial representation of the differential equations, we refer the reader to the work of \citet{abrams2021modelling}.
 
-To create a version of MOBelCov with a stochastic transition function, $M$, we utilise the stochastic compartmental model outlined above. Given the transitions within the compartmental model are derived by an underlying probability distribution it is possible to utilise the stochastic compartmental model transitions for MOBelCov. As previously outlined in Section \ref{sec:deterministic_comp_model} the contact matrix $\hat{C}$ applied the model state $s_{m}$ progresses the model and returns a new model state $s'_{m}$. Given the underlying model dynamics are governed in a probabilistic manner, the model returns $s'_{m}$ stochastically. Therefore, it is possible to use this process as a stochastic transition function, $M$, for MOBelCov. 
+To create a version of \momdpname\ with a stochastic transition function, $M$, we utilise the stochastic compartmental model outlined above. Given the transitions within the compartmental model are derived by an underlying probability distribution it is possible to utilise the stochastic compartmental model transitions for \momdpname\. As previously outlined in Sec. \ref{sec:deterministic_comp_model} the contact matrix $\hat{C}$ applied the model state $s_{m}$ progresses the model and returns a new model state $s'_{m}$. Given the underlying model dynamics are governed in a probabilistic manner, the model returns $s'_{m}$ stochastically. Therefore, it is possible to use this process as a stochastic transition function, $M$, for \momdpname. 
 
 \subsection{A Note on Model Parameters}
+\label{sec:compartment-model-parameters}
 
 The model is parameterised using the mean of the posteriors as reported by \citet{abrams2021modelling}.
 
 The population size for each of the considered age groups was taken from the Belgian statistical agency STATBEL\footnote{\url{https://statbel.fgov.be/nl/themas/bevolking/structuur-van-de-bevolking\#figures}}. To initialise the model, we used the number of confirmed cases until 13 March 2020 \cite{abrams2021modelling}, as reported by the Belgian agency for public health Sciensano\footnote{\url{https://epistat.wiv-isp.be/covid/}}.
 
 \subsection{Modelling interventions}
-\label{sec:interventions}
-In order to model different types of interventions, we follow \citet{abrams2021modelling}. Firstly, 
-to consider distinct exit scenarios, we alter the social contact matrices to reflect a contact reduction in a particular age group. Secondly, we assume that compliance to the interventions is gradual and model this using a logistic compliance function. We use the logistic compliance function in function of time $t$ proposed by Abrams et al.,
+\label{sec:compliance-function}
+In order to model different types of interventions, we follow \citet{abrams2021modelling}. Firstly, to consider distinct exit scenarios, we alter the social contact matrices to reflect a contact reduction in a particular age group. Secondly, we assume that compliance to the interventions is gradual and model this using a logistic compliance function. We use the logistic compliance function in function of time $t$,
+%
 \begin{equation}
 c(t,t_I) = \frac{\exp(\beta^*_0 + \beta^*_1(t-t_I))}{1+\exp(\beta^*_0 + \beta^*_1(t-t_I))},
 \end{equation}
-where $t_I$ indicates the time the intervention started \cite{abrams2021modelling}.
-We initialise $\beta^*_1$ to the value estimated in by Abrams et al. and choose $\beta^*_0=-5$, as an intercept to have $c(t)=0$ for $t=0$, in correspondence with Figure~F2 in the Supplementary Information of \citet{abrams2021modelling}.
+%
+where $t_I$ indicates the time the intervention started. We initialise $\beta^*_1$ to the value estimated in by Abrams et al. and choose $\beta^*_0=-5$, as an intercept to have $c(t)=0$ for $t=0$, in correspondence with Fig.~F2 in the Supplementary Information of \citet{abrams2021modelling}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -872,207 +787,86 @@ We initialise $\beta^*_1$ to the value estimated in by Abrams et al. and choose 
 \section{Additional results}
 
 \subsection{Comparison of coverage sets learned on ODE and Binomial models}
-\subsection{sec:cs-ode-vs-binomial}
+\label{sec:cs-ode-vs-binomial}
 
-\begin{figure}
+\begin{figure}[t!]
     \centering
     \input{fig/arh_binomial_ode}
-    \caption{ODE vs Binomial}
+    \caption{Comparison of learned coverage sets when PCN interacts with the ODE (i.e., deterministic) variant of the compartment model. We observe that, regardless of the chosen budget, PCN learns a similar coverage set on both variants of the model, indicating that it is able to cope with the stochasticity present in the Binomial variant.}
     \label{fig:pf-binomial-ode}
 \end{figure}
 
-The coverage sets displayed in Figure~\ref{fig:pf-binomal-arh-budgets} correspond to PCN trained on the Binomial model. To show that PCN copes with the stochasticity of this model, we compare these coverage sets with the ones learned on the ODE model.
+The coverage sets displayed in Fig.~\ref{fig:pf-binomial-arh-budgets} correspond to PCN trained on the \momdpname\ model, which is stochastic. To show that PCN copes with the stochasticity of this model, we compare these coverage sets with the ones learned on the ODE model, which is deterministic.
 
-Results are shown in Figure~\ref{fig:pf-binomial-ode}. First, in a similar fashion as Figure~\ref{fig:pf-binomal-arh-budgets}, we show the interpolated average coverage set for different budget setting, with PCN trained on the ODE model. We observe similar trends as for the Binomial model. Next, for each budget setting, we compare the interpolated average coverage set of the Binomial setting with the ODE setting. We observe similar coverage set, regardless of the budget setting, indicating that PCN is able to cope with stochastic transitions.
+Results are shown in Fig.~\ref{fig:pf-binomial-ode}. First, in a similar fashion as Fig.~\ref{fig:pf-binomial-arh-budgets}, we show the interpolated average coverage set for different budget setting, with PCN trained on the ODE model. We observe similar trends as for the Binomial model. Next, for each budget setting, we compare the interpolated average coverage set of the Binomial setting with the ODE setting. We observe similar coverage set, regardless of the budget setting, indicating that PCN is able to cope with stochastic transitions.
 
-\subsection{Learned coverage sets}
+\subsection{Comparison of coverage sets learned on $\mathbf{R}_{\text{ARH}}$ and $\mathbf{R}_{\text{ARI}}$}
+\label{sec:cs-arh-vs-ari}
 
-In Figure~\ref{fig:pareto-front-arh}, we display the coverage set with respect to the number of hospitalizations of the learned policies for both the ODE and Binomial variants, as the Binomial variants were omitted in the main paper for clarity. When trained on $\mathbf{R}_{\text{ARH}}$, the Binomial coverage set is on par with its ODE counterpart. On the other hand, the coverage sets when trained on $\mathbf{R}_{\text{ARI}}$ are slightly worse, as confirmed by the evaluation metrics in Table~\ref{tab:coverage-set}.
+In Sec.~\ref{sec:arh-vs-ari}, we show that we can learn all trade-offs between social burden and hospitalisations, while using the attack rate over infections as reward function.
 
-\begin{figure}[h]
+Results are shown in Fig.~\ref{fig:pf-binomial-arh-ari}. We observe that the learned coverage sets are similar, regardless of the budget setting. Still, the coverage set of when trained on $\mathbf{R}_{\text{ARI}}$ is systematically dominated by the one when trained on $\mathbf{R}_{\text{ARH}}$. \todo{Please check: is this actually true?} While hospitalisations and infections are highly correlated, they differ in terms of age-groups. Older age-groups are more susceptible to be hospitalised after being infected, but they do not form the majority of the population. For trade-offs where infections and social burden need to be balanced, the proportional reductions target different social environments than for trade-offs balancing hospitalisations and social burden. For example, the work environment is majorly comprised of individuals with a more robust immune system, reducing the social contact in this environment greatly affects the number of infections, but has a lesser impact on the number of hospitalisations.
+
+\begin{figure}[t!]
     \centering
-    \input{fig_budget}
-    \caption{The Pareto front of policies discovered by PCN, showing the different compromises between the number of hospitalizations and the number of lost contacts. Although $\text{PCN}_\text{ARI}$ was trained on the number of infections, it still shows a competitive coverage set w.r.t. hospitalizations.}
-    \label{fig:pareto-front-arh}
-\end{figure}
-
-
-\begin{figure}[h]
-    \centering
-    \input{fig_budget_binomial}
-    \caption{The Pareto front of policies discovered by PCN, showing the different compromises between the number of hospitalizations and the number of lost contacts. Although $\text{PCN}_\text{ARI}$ was trained on the number of infections, it still shows a competitive coverage set w.r.t. hospitalizations.}
-    \label{fig:pareto-front-arh}
-\end{figure}
-
-
-\begin{figure}[h]
-    \centering
-    \input{fig_arh}
-    \caption{The Pareto front of policies discovered by PCN, showing the different compromises between the number of hospitalizations and the number of lost contacts. Although $\text{PCN}_\text{ARI}$ was trained on the number of infections, it still shows a competitive coverage set w.r.t. hospitalizations.}
-    \label{fig:pareto-front-arh}
-\end{figure}
-
-\begin{figure}[h]
-    \centering
-\begin{tikzpicture}
-    \pgfplotsset{
-        scale only axis,
-        height=6cm,
-        xlabel={total number of daily new hospitalizations},
-        ylabel={total lost contacts}
-    }
-    \begin{axis}[
-    legend entries={{Budget 2 (ODE)}, {Budget 2 (Binomial)}, {Fixed}},
-    width=9.5cm
-    ]
-    \addplot[only marks,draw opacity=0.5,mark=x,red] table [x=o_1, y=o_5, col sep=comma] {data/cs/budget/budget_2.csv};
-    \addplot[only marks,draw opacity=0.5,mark=o,blue] table [x=o_1, y=o_5, col sep=comma] {data/cs/budget/binomial/budget_2.csv};
-    \addplot[only marks,mark=+] table [x=o_0, y=o_1, col sep=comma] {data/cs/cs_fixed.csv};
-    \end{axis}
-\end{tikzpicture}
-\end{figure}
-
-\begin{figure}[h]
-    \centering
-\begin{tikzpicture}
-    \pgfplotsset{
-        scale only axis,
-        height=6cm,
-        xlabel={total number of daily new hospitalizations},
-        ylabel={total lost contacts}
-    }
-    \begin{axis}[
-    legend entries={{Budget 3 (ODE)}, {Budget 3 (Binomial)}, {Fixed}},
-    width=9.5cm
-    ]
-    \addplot[only marks,draw opacity=0.5,mark=x,red] table [x=o_1, y=o_5, col sep=comma] {data/cs/budget/budget_3.csv};
-    \addplot[only marks,draw opacity=0.5,mark=o,blue] table [x=o_1, y=o_5, col sep=comma] {data/cs/budget/binomial/budget_3.csv};
-    \addplot[only marks,mark=+] table [x=o_0, y=o_1, col sep=comma] {data/cs/cs_fixed.csv};
-    \end{axis}
-\end{tikzpicture}
-\end{figure}
-
-\begin{figure}[h]
-    \centering
-\begin{tikzpicture}
-    \pgfplotsset{
-        scale only axis,
-        height=6cm,
-        xlabel={total number of daily new hospitalizations},
-        ylabel={total lost contacts}
-    }
-    \begin{axis}[
-    legend entries={{Budget 4 (ODE)}, {Budget 4 (Binomial)}, {Fixed}},
-    width=9.5cm
-    ]
-    \addplot[only marks,draw opacity=0.5,mark=x,red] table [x=o_1, y=o_5, col sep=comma] {data/cs/budget/budget_4.csv};
-    \addplot[only marks,draw opacity=0.5,mark=o,blue] table [x=o_1, y=o_5, col sep=comma] {data/cs/budget/binomial/budget_4.csv};
-    \addplot[only marks,mark=+] table [x=o_0, y=o_1, col sep=comma] {data/cs/cs_fixed.csv};
-    \end{axis}
-\end{tikzpicture}
-\end{figure}
-
-\begin{figure}[h]
-    \centering
-\begin{tikzpicture}
-    \pgfplotsset{
-        scale only axis,
-        height=6cm,
-        xlabel={total number of daily new hospitalizations},
-        ylabel={total lost contacts}
-    }
-    \begin{axis}[
-    legend entries={{Budget 5 (ODE)}, {Budget 5 (Binomial)}, {Fixed}},
-    width=9.5cm
-    ]
-    \addplot[only marks,draw opacity=0.5,mark=x,red] table [x=o_1, y=o_5, col sep=comma] {data/cs/budget/budget_5.csv};
-    \addplot[only marks,draw opacity=0.5,mark=o,blue] table [x=o_1, y=o_5, col sep=comma] {data/cs/budget/binomial/budget_5.csv};
-    \addplot[only marks,mark=+] table [x=o_0, y=o_1, col sep=comma] {data/cs/cs_fixed.csv};
-    \end{axis}
-\end{tikzpicture}
-\end{figure}
-
-\begin{figure}[h]
-    \centering
-\begin{tikzpicture}
-    \pgfplotsset{
-        scale only axis,
-        height=6cm,
-        xlabel={total number of daily new hospitalizations},
-        ylabel={total lost contacts}
-    }
-    \begin{axis}[
-    legend entries={{Budget N (ODE)}, {Budget N (Binomial)}, {Fixed}},
-    width=9.5cm
-    ]
-    \addplot[only marks,draw opacity=0.5,mark=x,red] table [x=o_1, y=o_5, col sep=comma] {data/cs/budget/budget_None.csv};
-    \addplot[only marks,draw opacity=0.5,mark=o,blue] table [x=o_1, y=o_5, col sep=comma] {data/cs/budget/binomial/budget_None.csv};
-    \addplot[only marks,mark=+] table [x=o_0, y=o_1, col sep=comma] {data/cs/cs_fixed.csv};
-    \end{axis}
-\end{tikzpicture}
-\end{figure}
-
-Moreover, we also show the coverage sets with respect to the number of infections in Figure~\ref{fig:pareto-front-ari}. Interestingly, both variants trained on the Binomial model learn a coverage set that almost completely dominates the variants trained on the ODE model. This is due to the stochasticity of the Binomial model. PCN stores trajectories in its dataset, and keep a selection for training. Due to the stochasticity in the transition function, some trajectories might result in higher returns, even though the same policy was applied. Due to the high variability in infections, this difference might become significant. This is also why the variants using the Binomial model show a worse $I_{\varepsilon}$ and $I_{\varepsilon}-mean$ than their ODE counterpart: their desired return stems from a single trajectory, while we evaluate the policies over multiple trajectories. The resulting average return is then different than the desired return. Section~\ref{sec:arh-vs-ari} explains why some policies trained on $\mathbf{R}_{\text{ARH}}$ show suboptimal behavior with respect to the number of infections.
-
-\begin{figure}[h]
-    \centering
-    \input{fig_ari}
-    \caption{The Pareto front of policies discovered by PCN, showing the different compromises between the number of hospitalizations and the number of lost contacts. Although $\text{PCN}_\text{ARI}$ was trained on the number of infections, it still shows a competitive coverage set w.r.t. hospitalizations.}
-    \label{fig:pareto-front-ari}
+    \input{fig/arh_binomial_ari}
+    \caption{Comparison of learned coverage sets when PCN learns using the attack rate of infections $\mathbf{R}_{\text{ARI}}$.}
+    \label{fig:pf-binomial-arh-ari}
 \end{figure}
 
 \subsection{Policy executions}
 
-PCN learns a coverage set containing more than 100 different policies. To gain a better insight about their behavior, and how they differ from each other, we plot executions of each learned policy in Figure~\ref{fig:policy-executions-ode}. The plots are displayed from the least restrictive policy in terms of social burden to the most restrictive one.
+Depending on the budget, PCN learns a coverage set containing more than 150 different policies. To gain a better insight about their behavior, and how they differ from each other, we plot executions of each learned policy in Fig.s~\ref{fig:policy-executions-b2-0}-\ref{fig:policy-executions-b2-140}. The plots are displayed from the least restrictive policy in terms of social burden to the most restrictive one. Since the \momdpname\ model is stochastic, we show 10 executions of the same policy, on each plot.
 
-We notice that policies~60 to 140 display similar behavior. At first, they all completely restrict social contact, effectively continuing the lockdown. Afterwards, they progressively lessen these restrictions. What differs in these policies is the timing and the speed at which the restrictions are lessened. These policies correspond to the right-most part of the coverage set displayed in Figure~\ref{fig:pareto-front-arh}, which shows many alternative for the $[0, 40000]$ hospitalizations segment.
+\foreach \i/\j in {0/19, 20/39, 40/59, 60/79, 80/99, 100/119, 120/139, 140/153}{
+    \begin{figure}
+        \centering
+        \plotPolicies{\i}{\j}{2}
+        \caption{Execution of policies \i\ to \j, with a budget of 2.}
+        \label{fig:policy-executions-b2-\i}
+    \end{figure}
+}
 
-\begin{figure}
-    \centering
-    \plotPolicies{0}{19}
-    \caption{Execution of policies 1 to 20.}
-    \label{fig:policy-executions-ode}
-\end{figure}
-\begin{figure}\ContinuedFloat
-    \centering
-    \plotPolicies{20}{39}
-    \caption{Execution of policies 21 to 40.}
-    \label{fig:policy-executions-ode}
-\end{figure}
-\begin{figure}\ContinuedFloat
-    \centering
-    \plotPolicies{40}{59}
-    \caption{Execution of policies 41 to 60.}
-    \label{fig:policy-executions-ode}
-\end{figure}
-\begin{figure}\ContinuedFloat
-    \centering
-    \plotPolicies{60}{79}
-    \caption{Execution of policies 61 to 80.}
-    \label{fig:policy-executions-ode}
-\end{figure}
-\begin{figure}\ContinuedFloat
-    \centering
-    \plotPolicies{80}{99}
-    \caption{Execution of policies 81 to 100.}
-    \label{fig:policy-executions-ode}
-\end{figure}
-\begin{figure}\ContinuedFloat
-    \centering
-    \plotPolicies{100}{119}
-    \caption{Execution of policies 101 to 120.}
-    \label{fig:policy-executions-ode}
-\end{figure}
-\begin{figure}\ContinuedFloat
-    \centering
-    \plotPolicies{120}{139}
-    \caption{Execution of policies 121 to 140.}
-    \label{fig:policy-executions-ode}
-\end{figure}
+\foreach \i/\j in {0/19, 20/39, 40/59, 60/79, 80/99, 100/119, 120/139, 140/159, 160/160}{
+    \begin{figure}
+        \centering
+        \plotPolicies{\i}{\j}{3}
+        \caption{Execution of policies \i\ to \j, with a budget of 3.}
+        \label{fig:policy-executions-b3-\i}
+    \end{figure}
+}
+
+\foreach \i/\j in {0/19, 20/39, 40/59, 60/79, 80/93}{
+    \begin{figure}
+        \centering
+        \plotPolicies{\i}{\j}{4}
+        \caption{Execution of policies \i\ to \j, with a budget of 4.}
+        \label{fig:policy-executions-b4-\i}
+    \end{figure}
+}
+
+\foreach \i/\j in {0/19, 20/39, 40/59, 60/79, 80/99, 100/114}{
+    \begin{figure}
+        \centering
+        \plotPolicies{\i}{\j}{5}
+        \caption{Execution of policies \i\ to \j, with a budget of 5.}
+        \label{fig:policy-executions-b5-\i}
+    \end{figure}
+}
+
+\foreach \i/\j in {0/19, 20/39, 40/59, 60/79, 80/99, 100/116}{
+    \begin{figure}
+        \centering
+        \plotPolicies{\i}{\j}{None}
+        \caption{Execution of policies \i\ to \j, with no budget restriction ($b=\infty$).}
+        \label{fig:policy-executions-binf-\i}
+    \end{figure}
+}
 
 \subsection{Experiment parameters}
+\label{sec:pcn-hyperparameters}
 
-We used the same hyper-parameters across all experiments. Each experiment resulted in 5 independent trials. Finally, we performed a grid-search over possible hyper-parameter values. All hyper-parameters used and their possible values explored during grid-search are displayed in Table~\ref{tab:pcn-hyperparameters}.
+We used the same hyper-parameters across all experiments. Each experiment resulted in 10 independent trials. Finally, we performed a grid-search over possible hyper-parameter values. All hyper-parameters used and their possible values explored during grid-search are displayed in Table~\ref{tab:pcn-hyperparameters}.
 
 \begin{table}[t]
     \centering
@@ -1088,7 +882,7 @@ We used the same hyper-parameters across all experiments. Each experiment result
         ER size (in episodes) & $1000$ & $400, 500, 1000$ \\
         initial random episodes & $200$ & $50, 200$ \\
         exploration noise & $0.1$ & $0, 0.1, 0.2$ \\
-        desired return noise & $0.2$ & $0, 0.1, 0.2$ \\
+        desired return noise & $0.05$ & $0, 0.05, 0.1, 0.2$ \\
         reward scaling & $[10000, 100]$ & \\
         \hline
     \end{tabular}
@@ -1099,19 +893,17 @@ We used the same hyper-parameters across all experiments. Each experiment result
 \begin{table}[h]
     \centering
     \input{tab_nn-architecture}
-    \caption{The 4 different neural network architectures explored for our experiments. All the displayed results use the \texttt{conv1d-big} variant.}
+    \caption{The 4 different neural network architectures explored for our experiments. All the displayed results use the \texttt{dense-big} variant.}
     \label{tab:nn-architecture}
 \end{table}
 
 \subsection{Neural network architecture}
+\label{sec:pcn-architecture}
 
-Next to the hyper-parameter search, we also performed a grid search over 4 different neural network architectures. All the architectures have the same structure. We use a compartment embedding $sc_{emb}$, a SCM embedding $sm_{emb}$ and a school-holidays embedding $sh_{emb}$ that take as inputs the compartment, the previous $p_w, p_s, p_l$ values (as they fully define the SCM $\hat{C}$) and a boolean flag for school holidays, respectively. All these embeddings have a same-sized embedding of 64, which are multiplied together to form the full state embedding. This state-embedding is used as input for another network, $s_{emb}$. Additionally, we use a common embedding $c_{emb}$ for the concatenation of the desired return and horizon. Finally, the results of $s_{emb}$ and $c_{emb}$ are multiplied together, before passing through a fully connected network $fc$ that has 3 outputs, one for $p_w, p_s, p_l$ respectively.
+Next to the hyper-parameter search, we also performed a grid search over 4 different neural network architectures. All the architectures have the same structure. We use a compartment embedding $sc_{emb}$, a social contact matrix embedding $sm_{emb}$ and a school-holidays embedding $sh_{emb}$ that take as inputs the compartment, the previous $p_w, p_s, p_l$ values (as they fully define the SCM $\hat{C}$) and a boolean flag for school holidays, respectively. All these embeddings have a same-sized embedding of 64, which are multiplied together to form the full state embedding. This state-embedding is used as input for another network, $s_{emb}$. Additionally, we use a common embedding $c_{emb}$ for the concatenation of the desired return and horizon. Finally, the results of $s_{emb}$ and $c_{emb}$ are multiplied together, before passing through a fully connected network $fc$ that has 3 outputs, one for $p_w, p_s, p_l$ respectively.
 
-All the architectures of the different components are displayed in Table~\ref{tab:nn-architecture}. The variant used in all experiments is \texttt{conv1d-big}.
+All the architectures of the different components are displayed in Table~\ref{tab:nn-architecture}. The variant used in all experiments is \texttt{dense-big}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Related Work}
-RL has also been used to learn effective mitigation strategies which limit the spread of COVID-19 \cite{ohi2020exploring}. Kwak et al. \cite{kwak2021covid} use deep RL, with an SIRD model, to learn efficacy of lockdown and travel restrictions in controlling the COVID-19 pandemic using data collected from various government organisations.  Bastani et al. \cite{bastani2021efficient} use a RL algorithm called Eva to limit the influx of asymptomatic travellers infected with SARS-CoV-2 to Greece. Kompella et al. \cite{kompella2020reinforcement} define a COVID-19 simulator and a methodology to learn mitigation policies that minimize the economic impact without overwhelming the hospital capacity. RL has also been used to learn effective COVID-19 vaccination distribution strategies \cite{beigi2021application,awasthi2020vacsim} and to create decision support systems for mitigating the spread of COVID-19.
-\end{comment}
 \end{document}

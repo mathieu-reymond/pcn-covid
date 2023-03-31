@@ -4,6 +4,7 @@
           date coordinates in=x,
           xticklabel=\day/\month,
           height=2cm,
+          every axis title/.append style={at={(0.07,0.0)}},
         }
         \begin{groupplot}[
         group style={
@@ -14,15 +15,16 @@
                 x descriptions at=edge bottom,
                 % set the `vertical sep' to zero
                 horizontal sep=0pt,
-                vertical sep=0pt
+                vertical sep=0pt,
             },
           width=9.5cm,
           axis y line*=left,
           xlabel={time},
-          ylabel={people},
+          ylabel={individuals},
+          y tick label style={/pgf/number format/sci}
         ]
         % GROUP WITH LEFT Y-AXIS: PEOPLE (HOSP, ICU, DEATHS)
-        \nextgroupplot[scaled y ticks=false]
+        \nextgroupplot[scaled y ticks=false, title=$\text{PCN}_{b=2}$]
         \addplot[mark=none, cyan] table [x=dates, y=i_hosp_new, col sep=comma] {data/transitions/arh/binomial/budget_2/policies-transitions/72/run_0.csv};
         \label{i_hosp_new}
         \addplot[mark=none, orange] table [x=dates, y=i_icu_new, col sep=comma] {data/transitions/arh/binomial/budget_2/policies-transitions/72/run_0.csv};
@@ -46,7 +48,6 @@
         \addplot[mark=none, orange] table [x=dates, y=i_icu_new, col sep=comma] {data/transitions/arh/binomial/budget_None/policies-transitions/48/run_0.csv};
         \addplot[mark=none, red] table [x=dates, y=d_new, col sep=comma] {data/transitions/arh/binomial/budget_None/policies-transitions/48/run_0.csv};
         \end{groupplot}
-        \node[rectangle,draw] (r) at (0,0) {$b=2$};
         % GROUP WITH RIGHT Y-AXIS: ACTIONS (P_W, P_S, P_L)
         \begin{groupplot}[
         group style={
