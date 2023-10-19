@@ -205,7 +205,7 @@ pdfkeywords={Multi-objective reinforcement learning, Epidemic control, COVID-19 
 \maketitle
 
 \begin{abstract}
-Infectious disease outbreaks can have a disruptive impact on public health and societal processes. As decision making in the context of epidemic mitigation is hard, reinforcement learning provides a methodology to automatically learn prevention strategies in combination with complex epidemic models. Current research focuses on optimizing policies with respect to a single objective, such as the pathogen's attack rate. However, as the mitigation of epidemics involves distinct, and possibly conflicting, criteria (i.a., prevalence, mortality, morbidity, cost), a multi-objective decision approach is warranted to learn balanced policies. To lift this decision-making process to real-world epidemic models, we apply deep multi-objective reinforcement learning and build upon a state-of-the-art algorithm, Pareto Conditioned Networks (PCN), to learn a set of solutions that approximates the Pareto front of the decision problem. We consider the first wave of the Belgian COVID-19 epidemic, which was mitigated by a lockdown, and study different deconfinement strategies, aiming to minimize both COVID-19 cases (i.e., infections and hospitalizations) and the societal burden that is induced by the applied mitigation measures. We contribute a multi-objective Markov decision process that encapsulates the stochastic compartment model that was used to inform policy makers during the COVID-19 epidemic. As these social mitigation measures are implemented in a continuous action space that modulates the contact matrix of the age-structured epidemic model, we extend PCN to this setting. We evaluate the solution set that PCN returns, and observe that it correctly learns to reduce the social burden whenever the hospitalization rates are sufficiently low. In this work, we thus demonstrate that multi-objective reinforcement learning is attainable in complex epidemiological models and provides essential insights to balance complex mitigation policies.
+Infectious disease outbreaks can have a disruptive impact on public health and societal processes. As decision-making in the context of epidemic mitigation is hard, reinforcement learning provides a methodology to automatically learn prevention strategies in combination with complex epidemic models. Current research focuses on optimizing policies with respect to a single objective, such as the pathogen's attack rate. However, as the mitigation of epidemics involves distinct, and possibly conflicting, criteria (i.a., prevalence, mortality, morbidity, cost), a multi-objective decision approach is warranted to learn balanced policies. To lift this decision-making process to real-world epidemic models, we apply deep multi-objective reinforcement learning and build upon a state-of-the-art algorithm, Pareto Conditioned Networks (PCN), to learn a set of solutions that approximates the Pareto front of the decision problem. We consider the first wave of the Belgian COVID-19 epidemic, which was mitigated by a lockdown, and study different deconfinement strategies, aiming to minimize both COVID-19 cases (i.e., infections and hospitalizations) and the societal burden that is induced by the applied mitigation measures. We contribute a multi-objective Markov decision process that encapsulates the stochastic compartment model that was used to inform policymakers during the COVID-19 epidemic. As these social mitigation measures are implemented in a continuous action space that modulates the contact matrix of the age-structured epidemic model, we extend PCN to this setting. We evaluate the solution set that PCN returns, and observe that it correctly learns to reduce the social burden whenever the hospitalization rates are sufficiently low. In this work, we thus demonstrate that multi-objective reinforcement learning is attainable in complex epidemiological models and provides essential insights to balance complex mitigation policies.
 \end{abstract}
 
 
@@ -218,102 +218,72 @@ Infectious disease outbreaks can have a disruptive impact on public health and s
 Infectious disease outbreaks represent a major global challenge \cite{miranda2022tale}. To this end, understanding the complex dynamics that underlie these epidemics is essential. Epidemiological transmission models allow us to capture and understand such dynamics and facilitate the study of prevention strategies through simulation. However, developing efficient mitigation strategies remains a challenging process, given the non-linear and complex nature of epidemics. 
 
 To address these challenges, reinforcement learning provides a methodology to automatically learn mitigation strategies in combination with complex epidemic models~\cite{libin2020}.
-Previous research focused on optimising policies with respect to a single objective, such as the pathogen's attack rate, while the mitigation of epidemics is a problem that inherently covers distinct  and possibly conflicting criteria (i.a., prevalence, mortality, morbidity, cost). Therefore, optimizing on a single objective requires that  these distinct criteria are somehow aggregated into a single metric.
-Typically, a decision maker will rely on an expert's assistance to manually design such a metric. However, this is a challenging process, as the decision maker is generally not aware of all possible trade-offs, and as such this may result in a metric that exhibits suboptimal performance. Furthermore, manually designing such metrics is time-consuming, costly and error-prone, as this non-intuitive process requires repetitive and tedious tuning to achieve the desired behaviour~\cite{roijers2013survey}. Moreover, taking a single objective approach has several other limiting factors. For example, it reduces the explainability of the learned solution, as we cannot compare the learned behavior with alternatives. Moreover, the preferences of the decision maker might change over time, in which case the optimization process needs to be done again~\cite{hayes2021practical}. 
+Previous research focused on optimizing policies with respect to a single objective, such as the pathogen's attack rate, while the mitigation of epidemics is a problem that inherently covers distinct  and possibly conflicting criteria (i.a., prevalence, mortality, morbidity, cost). Therefore, optimizing on a single objective requires that  these distinct criteria are somehow aggregated into a single metric.
+Typically, a decision maker will rely on an expert's assistance to manually design such a metric. However, this is a challenging process, as the decision maker is generally not aware of all possible trade-offs, and as such this may result in a metric that exhibits suboptimal performance. Furthermore, manually designing such metrics is time-consuming, costly and error-prone, as this non-intuitive process requires repetitive and tedious tuning to achieve the desired behavior~\cite{roijers2013survey}. Moreover, taking a single objective approach has several other limiting factors. For example, it reduces the explainability of the learned solution, as we cannot compare the learned behavior with alternatives. Moreover, the preferences of the decision maker might change over time, in which case the optimization process needs to be done again~\cite{hayes2021practical}. 
 
 This challenging process can be circumvented by taking an explicit multi-objective approach that aims to learn the different trade-offs regarding the considered criteria. By assuming that a decision maker will always prefer solutions for which at least one objective improves, it is possible to learn a set of optimal solutions referred to as the \emph{Pareto front}~\cite{hayes2021practical}. This enables decision makers to review each solution on the Pareto front before making a decision, thereby being aware of the trade-offs that each solution implies. 
 
 In this work, we investigate the use of \emph{multi-objective reinforcement learning} (MORL) to learn a set of solutions that approximate the Pareto front of multi-objective epidemic mitigation strategies. We consider the first wave of the Belgian COVID-19 epidemic, which was mitigated by a strict lockdown~\cite{willem2021impact}. When the incidence of confirmed cases was steadily decreasing, epidemiological experts were tasked to investigate deconfinement strategies, to reduce the severe social contact and mobility restrictions.
-Here, we consider an epidemiological model that was constructed to describe the Belgian COVID-19 epidemic and was fitted to hospitalisation incidence data and serial sero-prevalence data~\cite{abrams2021modelling}.
+Here, we consider an epidemiological model that was constructed to describe the Belgian COVID-19 epidemic and was fitted to hospitalization incidence data and serial sero-prevalence data~\cite{abrams2021modelling}.
 This model constitutes a stochastic discrete-time age-structured compartmental model that simulates mitigation strategies by varying social distancing parameters concerning school, work and leisure contacts.  
-Based on this model, we contribute a novel mutli-objective epidemiological reinforcement learning environment~(\momdpname), in the form of a multi-objective Markov decision process (MOMDP) \cite{roijers2013survey}. \momdpname\ encapsulates the epidemiological model developed by \citet{abrams2021modelling} to implement state transitions, with an action space that combines a proportional reduction of school, work and leisure contacts at each time step, Furthermore, it defines a reward function based on two objectives: the attack rate (i.e., proportion of the population affected by the pathogen) and the social burden that is induced by the mitigation measures.
+Based on this model, we contribute a novel multi-objective epidemiological reinforcement learning environment~(\momdpname), in the form of a multi-objective Markov decision process (MOMDP) \cite{roijers2013survey}. \momdpname\ encapsulates the epidemiological model developed by \citet{abrams2021modelling} to implement state transitions, with an action space that combines a proportional reduction of school, work and leisure contacts at each time step, Furthermore, it defines a reward function based on two objectives: the attack rate (i.e., proportion of the population affected by the pathogen) and the social burden that is induced by the mitigation measures.
 
 To learn and explore the trade-offs between the attack rate and social burden we use a state-of-the-art MORL approach based on Pareto Conditioned Networks (PCN)~\cite{reymond2022pcn}. PCN uses a single neural network to learn the policies that belong to the Pareto front.
 As PCN is an algorithm designed for discrete action-spaces, we extend it towards continuous action-spaces to accommodate \momdpname's action-space. With this continuous action variant of PCN, we explore the Pareto front of multi-objective COVID-19 mitigation policies.  
 
-By evaluating the solution set of mitigation policies learned by PCN, we observe that PCN minimises the social burden in scenarios where hospitalization rates are sufficiently low. Therefore, in this work we illustrate that multi-objective reinforcement learning can provide important insights concerning the trade-offs between complex mitigation polices in real-world epidemiological models.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Background}
-In the following, we use bold notation to denote variables with a vectorial value, while non-bold notation for its scalar counterpart.
-
-\subsection{Multi-Objective Reinforcement Learning}
-Real-world decisions problems typically consider multiple and possibly conflicting objectives. Multi-objective reinforcement learning (MORL) can be used to find optimal solutions for sequential decision making problems with multiple objectives~\cite{hayes2021practical}. Multi-objective sequential problems are typically modelled as a multi-objective Markov decision process (MOMDP), i.e., a tuple, $\mathcal{M} = \ltuple\mdpstatespace, \mdpactionspace, \mdptransition, \mdpdiscount, \momdprewardfn\rtuple$, where $\mdpstatespace$, $\mdpactionspace$ denote the state and action spaces respectively, $\mdptransition \colon \mdpstatespace \times \mdpactionspace \times \mdpstatespace  \to \left[ 0, 1 \right]$ denotes a probabilistic transition function, $\mdpdiscount$ is a discount factor determining the importance of future rewards and $\momdprewardfn \colon \mdpstatespace \times \mdpactionspace \times \mdpstatespace \to \mathbb{R}^n$ is an $n$-dimensional vector-valued immediate reward function, where $n$ corresponds to the number of objectives. 
-
-While MOMDPs define the actions an agent can take, it does not define the agent's behavior, i.e., which actions are taken in each state. Given this MOMDP, an agent follows a policy $\mdppolicy$, that expresses the probability to take action $\action \in \mdpactionspace$ when in state $\mdpstate \in \mdpstatespace$: $\mdpstatespace \times \mdpactionspace \to \left[ 0, 1 \right]$. We measure the performance of $\mdppolicy$ through the expected sum of discounted rewards (denoted the \emph{Value}) it achieves from the initial state $\mdpstate_0$ until the end of the decision problem:
-
-\begin{equation}
-    \momdpvaluefunction^\mdppolicy = \mathbb{E} \left [ \sum_{t=0}^h \mdpdiscount^t \momdpreward_t |\ \mdppolicy, \mdpstate_0 \right ],
-\end{equation}
-%
-where $\momdpreward_t$ corresponds to the multi-objective reward observed at time $t$, by following policy $\mdppolicy$, given by the reward function $\mdprewardfn(\mdpstate_t, \action_t, \mdpstate_{t+1})$, where $\mdpstate_t$ is the current state, $\action_t$ corresponds to the action that was taken, and $\mdpstate_{t+1}$ signifies the state reached by taking action $\action_t$.
-
-On the one hand, for single-objective RL, where $n = 1$, the goal is to find the policy $\mdppolicy^{*}$ that maximizes the $\mdpvaluefunction$-value:
-\begin{equation}
-\mdppolicy^*= \arg\max_\mdppolicy \mdpvaluefunction^\mdppolicy.
-\end{equation}
-
-On the other hand, for MORL, $n > 1$ which leads to vectorial returns. In this case, there can be policies for which, without any additional information, it is impossible to know if one is better than the other. For example, it is impossible to decide which policy between $\mdppolicy_1, \mdppolicy_2$ is optimal if both policies lead to expected returns $\momdpvaluefunction^{\mdppolicy_1}=(0,1), \momdpvaluefunction^{\mdppolicy_2}=(1,0)$ respectively. We call these solutions \emph{non-dominated}, i.e., solutions for which it is impossible to improve an objective without hampering another. The set that contains all the non-dominated solutions of the decision problem is called the \emph{Pareto front} $\mathcal{F}$. Our goal is to find the set of policies that lead to all the $\mdpvaluefunction$-values contained in the Pareto front $\Pi^* = \{\ \pi | \momdpvaluefunction^{\pi} \in \mathcal{F}\}$. In general, we call any set of $\mdpvaluefunction$-values a \emph{solution set}. When a solution set contains only  non-dominated $\mdpvaluefunction$-values, it is referred to as a \emph{coverage set}. In the case that no $\mdppolicy$ exists that has a $\momdpvaluefunction^{\pi}$ dominating any of the solutions in a coverage set, then this coverage set is the Pareto front.
-
-\subsection{Multi-Objective Metrics}
-Comparing the learned coverage sets produced by different algorithms is a non-trivial task, as one algorithm's output might dominate the other in some region of the objective-space, but be dominated in another. Intuitively, one would generally prefer the algorithm that covers a wider range of decision maker preferences. %In this work we use several metrics to evaluate our algorithm's performance.
-
-A widely used metric in the literature is called the \emph{hypervolume}~\cite{zitzler2003}. This metric evaluates the learned coverage set by computing its volume with respect to a fixed reference point. The reference point is taken as a lower bound on the achievable returns so that the volumes are always positive. By definition, the solutions contained in the Pareto front dominate all other possible solutions. Thus, no other solution can further increase the volume under the Pareto front. This means that the hypervolume is the highest for the Pareto front. One drawback of the hypervolume is that it can be difficult to interpret. For example, when working in high-dimensional objective-spaces, adding or removing a single point can drastically change hypervolume values, especially if the point lies close to an extremum of said space.
-
-To counterpoise these shortcomings, we evaluate our work using an additional metric called the $\varepsilon$-indicator $I_\varepsilon$~\cite{zitzler2003}, which measures how close a coverage set is to the Pareto front $\mathcal{F}$. Intuitively, $I_\varepsilon$ shows that any solution of $\mathcal{F}$ is \emph{at most} $\varepsilon$ better with respect to each objective $o$ than the closest solution of the evaluated coverage set:
-
-\begin{equation}
-\label{eq:epsilon-metric}
-    I_{\varepsilon} = 
-    \inf_{\varepsilon\in\mathbb{R}} 
-    \{ 
-    \forall\ \momdpvaluefunction^\pi\!{\in}\ \mathcal{F}, ~
-    \exists\ \momdpvaluefunction^{\pi'}\!{\in}\ \hat{\Pi} :\ 
-    || \momdpvaluefunction^\pi - \momdpvaluefunction^{\pi'} ||_{\infty} \le \varepsilon
-    \},
-\end{equation}
-%
-where $||.||_{\infty}$, the L-infinity norm, is defined as the magnitude of the largest entry of a vector.
-
-The main disadvantage of this metric is that we need the true Pareto front to compute it, which is unknown for our MOMDP (see Sec.~\ref{sec:sars-cov2-momdp}). To still gain insights from our learned policies, we approximate the true Pareto front using the non-dominated policies across all runs.
-
-We note that the $\varepsilon$-indicator metric is quite pessimistic, as it measures worst-case performance~\cite{zintgraf2015}, i.e., it will still report low performance as long as a single point of the Pareto front is incorrectly modeled, even if all the other points are covered. As such, we also use the $I_{\varepsilon-mean}$ which measures the \emph{average} $\varepsilon$ distance of the solutions in $\mathcal{F}$ with respect to the evaluated coverage set~\cite{reymond2022pcn}.
-
-Fig.~\ref{fig:paretofrontmetrics} shows a visual representation of the hypervolume and $\varepsilon$ metrics in two dimensions.
-
-\begin{figure}[t!]
-    \centering
-    \begin{tikzpicture}
-      \begin{axis}[legend pos=south west, xmin=-1, xmax=4.5, ymin=-0.5, ymax=4.5,ytick={0,1,2,3,4,5},scale only axis,width=0.4\textwidth]
-      \addplot[only marks,mark=x,mark size=3] coordinates {(-0.5,0)};
-      \addplot[only marks,mark=*] coordinates {(1,4)(2,2)(4,1)};
-      \addplot[only marks,mark=o] coordinates {(0.5,3)(0.75,2.3)(2.3,1)(3.3,0.7)};
-      % Hypervolume
-      \fill [cyan,opacity=0.2] (-0.5,0) -- (-0.5,3) -- (0.5,3) -- (0.5,2.3) -- (0.75,2.3) --
-      (0.75,1) -- (2.3,1) -- (2.3,0.7) -- (3.3,0.7) -- (3.3,0) -- cycle;
-      % epsilons
-      \draw [dashed, -|] (0.5, 3) -- node[right]{$\varepsilon_1$} (0.5,4);
-      %\draw [dashed, -|] (0.75,2.3) -- node[below]{x} (2,2.3);
-      \draw [dashed, -|] (2.3,1) -- node[right]{$\varepsilon_2$} (2.3,2);
-      \draw [dashed, -|] (3.3,0.7) -- node[below]{$\varepsilon_3$} (4,0.7);
-      \draw [opacity=0.2,line width=2,orange, dotted] (-0.5,0) -- (-0.5,4) -- (1,4) -- (1,2) --
-      (2,2) -- (2,1) -- (4,1) -- (4,0) -- (-0.5,0);
-      \end{axis}
-    \end{tikzpicture}
-    \caption{Example of a Pareto front (black dots) and a coverage set (white dots) in a 2-objective environment. The hypervolume metric (in light blue) measures the volume of all dominated solutions with respect to a reference point (cross). The reference point is taken as a lower bound on the achievable returns, which is why it can differ from the origin. The $\varepsilon$ metrics first compute the maximum distance between each point in the Pareto front and its closest point in the coverage set ($\varepsilon_i$). We can then take their maximum value to compute the $I_\varepsilon$ metric, or their mean value to obtain the $I_{\varepsilon-mean}$ metric of the coverage set.}
-    \label{fig:paretofrontmetrics}
-\end{figure}
+By evaluating the solution set of mitigation policies learned by PCN, we observe that PCN minimizes the social burden in scenarios where hospitalization rates are sufficiently low. Therefore, in this work we illustrate that multi-objective reinforcement learning can provide important insights concerning the trade-offs between complex mitigation polices in real-world epidemiological models.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{COVID-19 model and \momdpname\  MOMDP}
 \label{sec:sars-cov2-momdp}
+
+\emph{Reinforcement learning} (RL) is a set of machine learning techniques to learn the optimal behavior for sequential decision problems. Through trial and error, the RL agent interacts with its environment and observes the consequences of its decisions on the environment. Decisions that led to desirable consequences are reinforced, such that this behavior can be repeated. Otherwise, the agent explores the environment by trying different decisions. Developing mitigation strategies for epidemic control is a sequential decision problem on which we can apply RL, which will learn a desirable strategy.
+
+In this Section, we first introduce the compartment model that we use to simulate the epidemic (Sec.~\ref{sec:sars-cov2-momdp_model}). Then, we explain the intervention strategies that can be made to control the evolution of the epidemic (Sec.~\ref{sec:interventions}). Afterwards, we introduce the multi-objective reinforcement learning (MORL) framework (Sec.~\ref{sec:reinforcement-learning}). Finally, we propose \momdpname, a MORL environment that encompasses the epidemiological model and intervention strategies, so we can learn optimal mitigation strategies (Sec.~\ref{sec:covid-momdp}).
+
+In the following, we use bold notation to denote variables with a vectorial value, while non-bold notation for its scalar counterpart.
 \subsection{Stochastic compartment model for SARS-CoV-2}
 \label{sec:sars-cov2-momdp_model}
-To evaluate non-pharmaceutical interventions, we consider the compartmental model presented by Abrams et al., that was used to investigate exit strategies in Belgium after the first epidemic wave of SARS-CoV-2~\cite{abrams2021modelling}. This model concerns a discrete-time stochastic model, that considers an age-structured population. The model generalises a standard SEIR model\footnote{A standard SEIR model divides the population into four different states, i.e., susceptible, exposed, infectious and recovered individuals.}, extended to capture the different stages of disease spread and history that are associated with SARS-CoV-2 (i.e., pre-symptomatic, asymptomatic, symptomatic with mild symptoms and symptomatic with severe symptoms) and to represent the stages associated with severe disease, i.e., hospitalisation, admission to the intensive care unit (ICU) and death.
+To evaluate non-pharmaceutical interventions, we consider the compartmental model presented by Abrams et al., that was used to investigate exit strategies in Belgium after the first epidemic wave of SARS-CoV-2~\cite{abrams2021modelling}. This model concerns a discrete-time stochastic model, that considers an age-structured population. The model generalizes a standard SEIR model\footnote{A standard SEIR model divides the population into four different states, i.e., susceptible, exposed, infectious and recovered individuals.}, extended to capture the different stages of disease spread and history that are associated with SARS-CoV-2 (i.e., pre-symptomatic, asymptomatic, symptomatic with mild symptoms and symptomatic with severe symptoms) and to represent the stages associated with severe disease, i.e., hospitalization, admission to the intensive care unit (ICU) and death.
 
 A visual representation of the model is depicted in Fig.~\ref{fig:compartment_model}. It shows the different compartments, as well as the flow rates at which individuals move between compartments.
+
+\begin{figure}[t!]
+    \centering
+    \begin{tikzpicture}
+     \draw (0.0pt, 0.0pt)node[fill=green!20, thick, minimum height=0.6cm,minimum width=0.6cm, draw](0){$\textbf{S}$};
+     \draw (60.0pt, 0.0pt)node[fill=orange!20, thick, minimum height=0.6cm,minimum width=0.6cm, draw](1){$\textbf{E}$};
+     \draw (120.0pt, 0.0pt)node[fill=red!20, thick, minimum height=0.6cm,minimum width=0.6cm, draw](2){$\textbf{I}^{presym}$};
+     \draw (180.0pt, 10.0pt)node[fill=red!20, thick, minimum height=0.6cm,minimum width=0.6cm, draw](3){$\textbf{I}^{asym}$};
+     \draw (170.0pt, -30.0pt)node[fill=red!20, thick, minimum height=0.6cm,minimum width=0.6cm, draw](4){$\textbf{I}^{mild}$};
+     \draw (170.0pt, -70.0pt)node[fill=red!20, thick, minimum height=0.6cm,minimum width=0.6cm, draw](5){$\textbf{I}^{sev}$};
+     \draw (230.0pt, -50.0pt)node[fill=blue!20, thick, minimum height=0.6cm,minimum width=0.6cm, draw](6){$\textbf{I}^{hosp}$};
+      \draw (75.0pt, -70.0pt)node[fill=gray!20, thick, minimum height=0.6cm,minimum width=0.6cm, draw](10){$\textbf{H}^{new}$};
+     \draw (230.0pt, -90.0pt)node[fill=blue!20, thick, minimum height=0.6cm,minimum width=0.6cm, draw](7){$\textbf{I}^{icu}$};
+     \draw (300.0pt, -50.0pt)node[fill=orange!50, thick, minimum height=0.6cm,minimum width=0.6cm, draw](8){$\textbf{R}$};
+     \draw (300.0pt, -90.0pt)node[fill=purple!50, thick, minimum height=0.6cm,minimum width=0.6cm, draw](9){$\textbf{D}$};
+     
+     %\path[->] (6) edge[dotted, bend right = 50]
+     \path[->] (0) edge[] node[above]{$\boldsymbol{\lambda}(t)$} (1);
+     \path[->] (1) edge[] node[above]{$\gamma$} (2);
+     \path[->] (2) edge[] node[below]{$\textbf{p}\theta$} (3);
+     \path[->] (2) edge[] node[near end, below left]{$(1-\textbf{p})\theta$} (4);
+     \path[->] (4) edge[] node[left]{$\boldsymbol{\psi}$} (5);
+     \path[->] (5) edge[] node[near end, below left]{$(1-\phi_{1})\boldsymbol{\omega}$} (7);
+     \path[->] (5) edge[] node[above]{$\phi_{1}\boldsymbol{\omega}$} (6);
+     \path[->] (7) edge[] node[near end, below right]{$\boldsymbol{\delta}_{4}$} (8);
+     \path[->] (7) edge[] node[above]{$\boldsymbol{\tau}_{2}$} (9);
+     \path[->] (6) edge[] node[above]{$\boldsymbol{\delta}_{3}$} (8);
+     \path[->] (6) edge[] node[near start, below left]{$\boldsymbol{\tau}_{1}$} (9);
+     \path[->] (3) edge[bend left = 30] node[above right]{$\delta_{1}$} (8);
+     \path[->] (4) edge[bend left = 30] node[above left]{$\boldsymbol{\delta}_{2}$} (8);
+      \path[->] (5) edge[] node[below]{$\textbf{I}^{sev} - \textbf{H}^{new}$} (10);
+    \end{tikzpicture}
+    
+    \caption{Schematic diagram of the compartmental model for SARS-CoV-2 presented by \citet{abrams2021modelling} which is used to derive the MOMDP.}
+    \label{fig:compartment_model}
+\end{figure}
 
 These flow rates are defined by a set of ordinary differential equations, which are outlined as follows:
 
@@ -397,47 +367,91 @@ We consider a contact reduction function that imposes a proportional reduction o
 
 We denote $\hat{C}_t$ the social contact matrix at timestep $t$, resulting from the reduction function $\hat{C}$. Secondly, we assume that compliance to the interventions is gradual and model this using a logistic compliance function (see details in Sec.~\ref{sec:compliance-function} of the Appendix).
 
-\subsection{The \momdpname\ Environment}
+\subsection{Multi-Objective Reinforcement Learning}
+\label{sec:reinforcement-learning}
+Real-world decisions problems typically consider multiple and possibly conflicting objectives. Multi-objective reinforcement learning (MORL) can be used to find optimal solutions for sequential decision making problems with multiple objectives~\cite{hayes2021practical}. Multi-objective sequential problems are typically modelled as a multi-objective Markov decision process (MOMDP), i.e., a tuple, $\mathcal{M} = \ltuple\mdpstatespace, \mdpactionspace, \mdptransition, \mdpdiscount, \momdprewardfn\rtuple$, where $\mdpstatespace$, $\mdpactionspace$ denote the state and action spaces respectively, $\mdptransition \colon \mdpstatespace \times \mdpactionspace \times \mdpstatespace  \to \left[ 0, 1 \right]$ denotes a probabilistic transition function, $\mdpdiscount$ is a discount factor determining the importance of future rewards and $\momdprewardfn \colon \mdpstatespace \times \mdpactionspace \times \mdpstatespace \to \mathbb{R}^n$ is an $n$-dimensional vector-valued immediate reward function, where $n$ corresponds to the number of objectives. 
+
+While MOMDPs define the actions an agent can take, it does not define the agent's behavior, i.e., which actions are taken in each state. Given this MOMDP, an agent follows a policy $\mdppolicy$, that expresses the probability to take action $\action \in \mdpactionspace$ when in state $\mdpstate \in \mdpstatespace$: $\mdpstatespace \times \mdpactionspace \to \left[ 0, 1 \right]$. We measure the performance of $\mdppolicy$ through the expected sum of discounted rewards (denoted the \emph{Value}) it achieves from the initial state $\mdpstate_0$ until the end of the decision problem:
+
+\begin{equation}
+    \momdpvaluefunction^\mdppolicy = \mathbb{E} \left [ \sum_{t=0}^h \mdpdiscount^t \momdpreward_t |\ \mdppolicy, \mdpstate_0 \right ],
+\end{equation}
+%
+where $\momdpreward_t$ corresponds to the multi-objective reward observed at time $t$, by following policy $\mdppolicy$, given by the reward function $\mdprewardfn(\mdpstate_t, \action_t, \mdpstate_{t+1})$, where $\mdpstate_t$ is the current state, $\action_t$ corresponds to the action that was taken, and $\mdpstate_{t+1}$ signifies the state reached by taking action $\action_t$.
+
+On the one hand, for single-objective RL, where $n = 1$, the goal is to find the policy $\mdppolicy^{*}$ that maximizes the $\mdpvaluefunction$-value:
+\begin{equation}
+\mdppolicy^*= \arg\max_\mdppolicy \mdpvaluefunction^\mdppolicy.
+\end{equation}
+
+On the other hand, for MORL, $n > 1$ which leads to vectorial returns. In this case, there can be policies for which, without any additional information, it is impossible to know if one is better than the other. For example, it is impossible to decide which policy between $\mdppolicy_1, \mdppolicy_2$ is optimal if both policies lead to expected returns $\momdpvaluefunction^{\mdppolicy_1}=(0,1), \momdpvaluefunction^{\mdppolicy_2}=(1,0)$ respectively. We call these solutions \emph{non-dominated}, i.e., solutions for which it is impossible to improve an objective without hampering another. The set that contains all the non-dominated solutions of the decision problem is called the \emph{Pareto front} $\mathcal{F}$. Our goal is to find the set of policies that lead to all the $\mdpvaluefunction$-values contained in the Pareto front $\Pi^* = \{\ \pi | \momdpvaluefunction^{\pi} \in \mathcal{F}\}$. In general, we call any set of $\mdpvaluefunction$-values a \emph{solution set}. When a solution set contains only  non-dominated $\mdpvaluefunction$-values, it is referred to as a \emph{coverage set}. In the case that no $\mdppolicy$ exists that has a $\momdpvaluefunction^{\pi}$ dominating any of the solutions in a coverage set, then this coverage set is the Pareto front.
+
+\subsubsection{Multi-Objective Metrics}
+Comparing the learned coverage sets produced by different algorithms is a non-trivial task, as one algorithm's output might dominate the other in some region of the objective-space, but be dominated in another. Intuitively, one would generally prefer the algorithm that covers a wider range of decision maker preferences. %In this work we use several metrics to evaluate our algorithm's performance.
+
+A widely used metric in the literature is called the \emph{hypervolume}~\cite{zitzler2003}. This metric evaluates the learned coverage set by computing its volume with respect to a fixed reference point. The reference point is taken as a lower bound on the achievable returns so that the volumes are always positive. By definition, the solutions contained in the Pareto front dominate all other possible solutions. Thus, no other solution can further increase the volume under the Pareto front. This means that the hypervolume is the highest for the Pareto front. One drawback of the hypervolume is that it can be difficult to interpret. For example, when working in high-dimensional objective-spaces, adding or removing a single point can drastically change hypervolume values, especially if the point lies close to an extremum of said space.
+
+To counterpoise these shortcomings, we evaluate our work using an additional metric called the $\varepsilon$-indicator $I_\varepsilon$~\cite{zitzler2003}, which measures how close a coverage set is to the Pareto front $\mathcal{F}$. Intuitively, $I_\varepsilon$ shows that any solution of $\mathcal{F}$ is \emph{at most} $\varepsilon$ better with respect to each objective $o$ than the closest solution of the evaluated coverage set:
+
+\begin{equation}
+\label{eq:epsilon-metric}
+    I_{\varepsilon} = 
+    \inf_{\varepsilon\in\mathbb{R}} 
+    \{ 
+    \forall\ \momdpvaluefunction^\pi\!{\in}\ \mathcal{F}, ~
+    \exists\ \momdpvaluefunction^{\pi'}\!{\in}\ \hat{\Pi} :\ 
+    || \momdpvaluefunction^\pi - \momdpvaluefunction^{\pi'} ||_{\infty} \le \varepsilon
+    \},
+\end{equation}
+%
+where $||.||_{\infty}$, the L-infinity norm, is defined as the magnitude of the largest entry of a vector.
+
+The main disadvantage of this metric is that we need the true Pareto front to compute it, which is unknown for our MOMDP (see Sec.~\ref{sec:sars-cov2-momdp}). To still gain insights from our learned policies, we approximate the true Pareto front using the non-dominated policies across all runs.
+
+We note that the $\varepsilon$-indicator metric is quite pessimistic, as it measures worst-case performance~\cite{zintgraf2015}, i.e., it will still report low performance as long as a single point of the Pareto front is incorrectly modeled, even if all the other points are covered. As such, we also use the $I_{\varepsilon-mean}$ which measures the \emph{average} $\varepsilon$ distance of the solutions in $\mathcal{F}$ with respect to the evaluated coverage set~\cite{reymond2022pcn}.
+
+Fig.~\ref{fig:paretofrontmetrics} shows a visual representation of the hypervolume and $\varepsilon$ metrics in two dimensions.
+
 \begin{figure}[t!]
     \centering
     \begin{tikzpicture}
-     \draw (0.0pt, 0.0pt)node[fill=green!20, thick, minimum height=0.6cm,minimum width=0.6cm, draw](0){$\textbf{S}$};
-     \draw (60.0pt, 0.0pt)node[fill=orange!20, thick, minimum height=0.6cm,minimum width=0.6cm, draw](1){$\textbf{E}$};
-     \draw (120.0pt, 0.0pt)node[fill=red!20, thick, minimum height=0.6cm,minimum width=0.6cm, draw](2){$\textbf{I}^{presym}$};
-     \draw (180.0pt, 10.0pt)node[fill=red!20, thick, minimum height=0.6cm,minimum width=0.6cm, draw](3){$\textbf{I}^{asym}$};
-     \draw (170.0pt, -30.0pt)node[fill=red!20, thick, minimum height=0.6cm,minimum width=0.6cm, draw](4){$\textbf{I}^{mild}$};
-     \draw (170.0pt, -70.0pt)node[fill=red!20, thick, minimum height=0.6cm,minimum width=0.6cm, draw](5){$\textbf{I}^{sev}$};
-     \draw (230.0pt, -50.0pt)node[fill=blue!20, thick, minimum height=0.6cm,minimum width=0.6cm, draw](6){$\textbf{I}^{hosp}$};
-      \draw (75.0pt, -70.0pt)node[fill=gray!20, thick, minimum height=0.6cm,minimum width=0.6cm, draw](10){$\textbf{H}^{new}$};
-     \draw (230.0pt, -90.0pt)node[fill=blue!20, thick, minimum height=0.6cm,minimum width=0.6cm, draw](7){$\textbf{I}^{icu}$};
-     \draw (300.0pt, -50.0pt)node[fill=orange!50, thick, minimum height=0.6cm,minimum width=0.6cm, draw](8){$\textbf{R}$};
-     \draw (300.0pt, -90.0pt)node[fill=purple!50, thick, minimum height=0.6cm,minimum width=0.6cm, draw](9){$\textbf{D}$};
-     
-     %\path[->] (6) edge[dotted, bend right = 50]
-     \path[->] (0) edge[] node[above]{$\boldsymbol{\lambda}(t)$} (1);
-     \path[->] (1) edge[] node[above]{$\gamma$} (2);
-     \path[->] (2) edge[] node[below]{$\textbf{p}\theta$} (3);
-     \path[->] (2) edge[] node[near end, below left]{$(1-\textbf{p})\theta$} (4);
-     \path[->] (4) edge[] node[left]{$\boldsymbol{\psi}$} (5);
-     \path[->] (5) edge[] node[near end, below left]{$(1-\phi_{1})\boldsymbol{\omega}$} (7);
-     \path[->] (5) edge[] node[above]{$\phi_{1}\boldsymbol{\omega}$} (6);
-     \path[->] (7) edge[] node[near end, below right]{$\boldsymbol{\delta}_{4}$} (8);
-     \path[->] (7) edge[] node[above]{$\boldsymbol{\tau}_{2}$} (9);
-     \path[->] (6) edge[] node[above]{$\boldsymbol{\delta}_{3}$} (8);
-     \path[->] (6) edge[] node[near start, below left]{$\boldsymbol{\tau}_{1}$} (9);
-     \path[->] (3) edge[bend left = 30] node[above right]{$\delta_{1}$} (8);
-     \path[->] (4) edge[bend left = 30] node[above left]{$\boldsymbol{\delta}_{2}$} (8);
-      \path[->] (5) edge[] node[below]{$\textbf{I}^{sev} - \textbf{H}^{new}$} (10);
+      \begin{axis}[
+        legend pos=south west,
+        xmin=-1,
+        xmax=4.5,
+        ymin=-0.5,
+        ymax=4.5,
+        ytick={0,1,2,3,4,5},
+        scale only axis,
+        width=0.4\textwidth,
+        xlabel={objective $1$},
+        ylabel={objective $2$}]
+      \addplot[only marks,mark=x,mark size=3] coordinates {(-0.5,0)};
+      \addplot[only marks,mark=*] coordinates {(1,4)(2,2)(4,1)};
+      \addplot[only marks,mark=o] coordinates {(0.5,3)(0.75,2.3)(2.3,1)(3.3,0.7)};
+      % Hypervolume
+      \fill [cyan,opacity=0.2] (-0.5,0) -- (-0.5,3) -- (0.5,3) -- (0.5,2.3) -- (0.75,2.3) --
+      (0.75,1) -- (2.3,1) -- (2.3,0.7) -- (3.3,0.7) -- (3.3,0) -- cycle;
+      % epsilons
+      \draw [dashed, -|] (0.5, 3) -- node[right]{$\varepsilon_1$} (0.5,4);
+      %\draw [dashed, -|] (0.75,2.3) -- node[below]{x} (2,2.3);
+      \draw [dashed, -|] (2.3,1) -- node[right]{$\varepsilon_2$} (2.3,2);
+      \draw [dashed, -|] (3.3,0.7) -- node[below]{$\varepsilon_3$} (4,0.7);
+      \draw [opacity=0.2,line width=2,orange, dotted] (-0.5,0) -- (-0.5,4) -- (1,4) -- (1,2) --
+      (2,2) -- (2,1) -- (4,1) -- (4,0) -- (-0.5,0);
+      \end{axis}
     \end{tikzpicture}
-    
-    \caption{Schematic diagram of the compartmental model for SARS-CoV-2 presented by \citet{abrams2021modelling} which is used to derive the MOMDP.}
-    \label{fig:compartment_model}
+    \caption{Example of a Pareto front (black dots) and a coverage set (white dots) in a 2-objective environment. The hypervolume metric (in light blue) measures the volume of all dominated solutions with respect to a reference point (cross). The reference point is taken as a lower bound on the achievable returns, which is why it can differ from the origin. The $\varepsilon$ metrics first compute the maximum distance between each point in the Pareto front and its closest point in the coverage set ($\varepsilon_i$). We can then take their maximum value to compute the $I_\varepsilon$ metric, or their mean value to obtain the $I_{\varepsilon-mean}$ metric of the coverage set.}
+    \label{fig:paretofrontmetrics}
 \end{figure}
+
+\subsection{The \momdpname\ Environment}
+\label{sec:covid-momdp}
 In order to apply multi-objective reinforcement learning, we construct the \momdpname\ MOMDP based on the epidemiological model introduced in Sec.~\ref{sec:sars-cov2-momdp_model} and graphically depicted in Fig.~\ref{fig:compartment_model}. Moreover, we consider a finite-horizon setting where we simulate the compartment model for a fixed number of weeks.
 
 \paragraph{Action-space:} Our actions concern the installment of a social contact matrix with a particular reduction resulting from the reduction function $\hat{C}$ (see Sec.~\ref{sec:interventions}). To this end, we use the proportional reduction parameters $p_w, p_s, p_l$ defined in Sec.~\ref{sec:interventions}. Thus, each $\mdpaction \in \mdpactionspace$ is a 3-dimensional continuous vector in $[0,1]^3$ (i.e., $\mdpaction = [p_{w}, p_{s}, p_{l}]$) which impacts the social contact matrix according to Eq.~\ref{eq:scm}.
 
-\paragraph{Transition function:} The model defined by \citet{abrams2021modelling} utilises a model transition probability $M$ (see Sec.~\ref{sec:binomial-model} of the Appendix for details on $M$), that progresses the epidemiological model in one timestep based on the currently installed social contact matrix $\hat{C}(p_{w}, p_{s}, p_{l})$.
+\paragraph{Transition function:} The model defined by \citet{abrams2021modelling} utilizes a model transition probability $M$ (see Sec.~\ref{sec:binomial-model} of the Appendix for details on $M$), that progresses the epidemiological model in one timestep based on the currently installed social contact matrix $\hat{C}(p_{w}, p_{s}, p_{l})$.
 We use this function as the transition function in \momdpname.
 
 In a classical MDP, executing an action $\mdpaction_t$ in any state $\mdpstate_t$ leads to a next state $\mdpstate_{t+1}$ according to the transition function $\mdptransition$. At every timestep $t$, the agent is free to choose the action to perform. In our case, this potentially results in a different restriction $[p_{w}, p_{s}, p_{l}]$ every week. However, we argue that in the context of mitigation policies, consistency is important and policies that impose changes too frequently will be hard to adhere to.
@@ -453,7 +467,7 @@ Finally, for each timestep $t$, our transition function $\mdptransition$ uses th
     \ltuple S_k, E_k, I_k^{presym}, I_k^{asym}, I_k^{mild}, I_k^{sev}, I_k^{hosp}, I_k^{icu}, H^{new}_k, D_k, R_k \rtuple ,
 \end{equation}
 %
-for each age group $k \in \{1, \ldots, \agegroups\}$, where $S$ encodes the members of the population who are susceptible to infection and $E$ encodes the members of the population who have been exposed to COVID-19. Moreover, $I^{presym}$, $I^{asym}$, $I^{mild}$, $I^{hosp}$, $I^{icu}$ denote the members of the population infected with COVID-19 and are, respectively, presymptomatic, asymptomatic, mildly symptomatic, hospitalised, or in the ICU. Finally, $H^{new}_k$ represents the number of newly hospitalised individuals in age group $k$.
+for each age group $k \in \{1, \ldots, \agegroups\}$, where $S$ encodes the members of the population who are susceptible to infection and $E$ encodes the members of the population who have been exposed to COVID-19. Moreover, $I^{presym}$, $I^{asym}$, $I^{mild}$, $I^{hosp}$, $I^{icu}$ denote the members of the population infected with COVID-19 and are, respectively, pre-symptomatic, asymptomatic, mildly symptomatic, hospitalized, or in the ICU. Finally, $H^{new}_k$ represents the number of newly hospitalized individuals in age group $k$.
 
 We parameterize the epidemiological model using the mean of the posteriors as specified by \citet{abrams2021modelling} (details in Sec.~\ref{sec:compartment-model-parameters} of the Appendix).
 
@@ -466,14 +480,14 @@ Therefore, we define a state in \momdpname\ as follows:
     \mdpstate = \mdpstate_m \cup \hat{C} \cup \budget
 \end{equation}
 
-\paragraph{Reward function:} We define a vectorial reward function which considers multiple objectives: attack rate (i.e., infections and hospitalisations) and the social burden imposed by the interventions on the population.
+\paragraph{Reward function:} We define a vectorial reward function which considers multiple objectives: attack rate (i.e., infections and hospitalizations) and the social burden imposed by the interventions on the population.
 
 The attack rate in terms of infections is defined as the difference in susceptibles from the current state to the next state~\cite{libin2020}. Since this is a cost that needs to be minimized, we defined the corresponding reward function as the negative attack rate:
 \begin{equation}
 \mdprewardfn_{\text{ARI}}(\mdpstate,\mdpaction,\mdpstate') = -(\sum_{k=1}^{\agegroups}S_k(\mdpstate)-\sum_{k=1}^{\agegroups}S_k(\mdpstate')).
 \end{equation}
 
-The reward function to reduce the attack rate in terms of hospitalisations is defined as the negative number of new hospitalizations:
+The reward function to reduce the attack rate in terms of hospitalizations is defined as the negative number of new hospitalizations:
 \begin{equation}
 \mdprewardfn_{\text{ARH}}(\mdpstate,\mdpaction,\mdpstate') = -\sum_{k=1}^{\agegroups}H^\text{new}_k(\mdpstate).
 \label{eqn:attack-rate-hosp}
@@ -533,7 +547,7 @@ More precisely, we randomly select a non-dominated return $\mathbf{R}_{nd}$ and 
 \subsection{Training the network for continuous actions}
 \label{sec:pcn-continuous}
 
-PCN trains the network as a classification problem, where each class represents a different action. Transitions $x= \langle \mdpstate_t, h_t, \momdpreturn_t \rangle, y=\action_t$ are sampled from the dataset, and the ground-truth output $y$ is compared with the predicted output $\hat{y}=\pi(\mdpstate_t, h_t, \momdpreturn_t)$. The predictor (i.e., the policy) is then updated using the cross-entropy loss function \cite{shore1980axiomatic}:
+PCN trains the network as a classification problem, where each class represents a different action. Transitions $x= \langle \mdpstate_t, h_t, \momdpreturn_t \rangle, y=\action_t$ are sampled from the dataset, and the ground-truth output $y$ is compared with the predicted output $\hat{y}=\pi(\mdpstate_t, h_t, \momdpreturn_t)$. The predictor (i.e., the policy) is then updated using the cross-entropy loss function~\cite{shore1980axiomatic}:
 \begin{equation}
     H = -\sum_{\action \in \mathcal{A}}{y_{\action} \log \pi(\action|\mdpstate_t,h_t,\momdpreturn_t)}
 \end{equation}
@@ -565,7 +579,7 @@ Although we use a stochastic model to cope with the uncertainty of the outcome o
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Analysing COVID-19 deconfinement policies}
+\section{Results}
 \label{sec:experiments}
 Our goal is to use PCN to learn deconfinment strategies in the \momdpname\ environment. We aim to learn policies that balance between the epidemiological objective of minimising the attack rate (i.e., $\mdprewardfn_\text{ARH}$ for hospitalisation and $\mdprewardfn_\text{ARI}$ for infection) and the social burden (i.e., $\mdprewardfn_\text{SB}$) experienced by the population population due to the implement mitigation measures. To this end, we consider two cases for the vectorial reward functions $[\mdprewardfn_\text{ARH}, \mdprewardfn_\text{SB}]$ and $[\mdprewardfn_\text{ARI}, \mdprewardfn_\text{SB}]$, to learn and analyse policies under different targets with respect to the considered attack rate.
 
@@ -576,9 +590,9 @@ Conform to \citet{abrams2021modelling}, the simulation starts on the 1st of Marc
 % https://nl.wikipedia.org/wiki/Maatregelen_tijdens_de_coronacrisis_in_Belgi%C3%AB
 We draw the analogy with the multi-phase exit strategy established by the Belgian government and the restriction on the number of action-changes imposed by the \momdpname's budget $\budget$. Indeed, on the 11th of May 2020, exactly one week after the end of the lockdown, stores and certain companies were allowed to reopen, under strict conditions. This corresponds to altering $p_w$ in our MOMDP. One week later, on 18th of May, primary and secondary schools reopened for limited sized class-groups, and the cultural sector reopened partially. This is equivalent to increasing $p_s$ and $p_l$. Further changes of restrictions occured on the 8th of June, 1st, 9th and 25th of July. Thus, we argue that, with a limited budget, we can achieve realistic policies. In our experiments, we consider budgets of 2 to 5, as these closely relate to the number of changes that occured until the end of the summer holidays of 2020. As an upper bound, we also consider a no-limit budget setting.
 
-To evaluate the quality of the policies learned by PCN, we compare PCN to a baseline. This baseline consists of a set of 100 fixed policies, that iterate over all the possible social restriction levels, with values ranging between 0 and 1. Concretely, each policy uses a fixed proportional reduction $p_w=p_l=p_s=u, u\sim\mathcal{U}(0, 1)$ throughout the episode. In other words, the fixed policies directly operate in a fine-grained manner on the whole contact reduction function $\hat{C}$. This allows us to obtain a strong baseline for potential exit strategies over the objective space. We note that while such fixed policies are a feasible approach, they do not scale well in terms of action and objective spaces and they will not be able to provide an adaptive restriction level, which is what we aim to provide using PCN.
+To evaluate the quality of the policies learned by PCN, we compare PCN to a baseline. This baseline consists of a set of 100 fixed policies, that iterate over all the possible social restriction levels, with values ranging between 0 and 1. Concretely, each policy uses a fixed proportional reduction $p_w=p_l=p_s=u, u\sim\mathcal{U}(0, 1)$ throughout the episode. In other words, the fixed policies directly operate in a fine-grained manner on the whole contact reduction function $\hat{C}$. This allows us to obtain a strong baseline for potential exit strategies over the objective space. We note that while such fixed policies are a feasible approach, they do not scale well in terms of action and objective spaces and they will not be able to provide an adaptive restriction level, which is our aim using PCN.
 
-All experiments are averaged over 10 runs. The hyper-parameters and the neural network architecture can be found in Sec.s~\ref{sec:pcn-hyperparameters} and Sec.~\ref{sec:pcn-architecture} of the Appendix, respectively.
+All experiments are averaged over 10 runs. The hyper-parameters and the neural network architecture can be found in Sec.~\ref{sec:pcn-hyperparameters} and Sec.~\ref{sec:pcn-architecture} of the Appendix, respectively.
 
 
 \subsection{Learned coverage set}
@@ -586,6 +600,14 @@ All experiments are averaged over 10 runs. The hyper-parameters and the neural n
 \begin{figure}
     \centering
     \input{fig/arh_binomial_both}
+    \caption{The Pareto front of policies discovered by PCN using \momdpname, showing the different compromises between the number of hospitalizations and the number of lost contacts. On the right, we show, for each budget setting (colored, subscript indicates budget) the coverage set learned by the best performing run. On the left, we show an interpolated average of the coverage sets learned by the different runs, with the shaded regions corresponding to the standard deviation. For comparison, the basline is displayed on both plots (in black). As the budget increases, so does the size of the coverage set learnt by PCN. Changes are most noticeable in the less restrictive trade-offs in terms of social burden.}
+    \label{fig:pf-binomial-arh-budgets}
+\end{figure}
+
+
+\begin{figure}
+    \centering
+    \input{fig/arh_inflection_point}
     \caption{The Pareto front of policies discovered by PCN using \momdpname, showing the different compromises between the number of hospitalizations and the number of lost contacts. On the right, we show, for each budget setting (colored, subscript indicates budget) the coverage set learned by the best performing run. On the left, we show an interpolated average of the coverage sets learned by the different runs, with the shaded regions corresponding to the standard deviation. For comparison, the basline is displayed on both plots (in black). As the budget increases, so does the size of the coverage set learnt by PCN. Changes are most noticeable in the less restrictive trade-offs in terms of social burden.}
     \label{fig:pf-binomial-arh-budgets}
 \end{figure}
@@ -800,7 +822,7 @@ Results are shown in Fig.~\ref{fig:pf-binomial-ode}. First, in a similar fashion
 
 In Sec.~\ref{sec:arh-vs-ari}, we show that we can learn all trade-offs between social burden and hospitalisations, while using the attack rate over infections as reward function.
 
-Results are shown in Fig.~\ref{fig:pf-binomial-arh-ari}. We observe that the learned coverage sets are similar, regardless of the budget setting. Still, the coverage set of when trained on $\mathbf{R}_{\text{ARI}}$ is systematically dominated by the one when trained on $\mathbf{R}_{\text{ARH}}$. \todo{Please check: is this actually true?} While hospitalisations and infections are highly correlated, they differ in terms of age-groups. Older age-groups are more susceptible to be hospitalised after being infected, but they do not form the majority of the population. For trade-offs where infections and social burden need to be balanced, the proportional reductions target different social environments than for trade-offs balancing hospitalisations and social burden. For example, the work environment is majorly comprised of individuals with a more robust immune system, reducing the social contact in this environment greatly affects the number of infections, but has a lesser impact on the number of hospitalisations.
+Results are shown in Fig.~\ref{fig:pf-binomial-arh-ari}. We observe that the learned coverage sets are similar, regardless of the budget setting. Still, the coverage set of when trained on $\mathbf{R}_{\text{ARI}}$ is systematically dominated by the one when trained on $\mathbf{R}_{\text{ARH}}$. \todo{Please check: is the following actually true?} While hospitalisations and infections are highly correlated, they differ in terms of age-groups. Older age-groups are more susceptible to be hospitalised after being infected, but they do not form the majority of the population. For trade-offs where infections and social burden need to be balanced, the proportional reductions target different social environments than for trade-offs balancing hospitalisations and social burden. For example, the work environment is majorly comprised of individuals with a more robust immune system, reducing the social contact in this environment greatly affects the number of infections, but has a lesser impact on the number of hospitalisations.
 
 \begin{figure}[t!]
     \centering
@@ -808,55 +830,6 @@ Results are shown in Fig.~\ref{fig:pf-binomial-arh-ari}. We observe that the lea
     \caption{Comparison of learned coverage sets when PCN learns using the attack rate of infections $\mathbf{R}_{\text{ARI}}$.}
     \label{fig:pf-binomial-arh-ari}
 \end{figure}
-
-\subsection{Policy executions}
-
-Depending on the budget, PCN learns a coverage set containing more than 150 different policies. To gain a better insight about their behavior, and how they differ from each other, we plot executions of each learned policy in Fig.s~\ref{fig:policy-executions-b2-0}-\ref{fig:policy-executions-b2-140}. The plots are displayed from the least restrictive policy in terms of social burden to the most restrictive one. Since the \momdpname\ model is stochastic, we show 10 executions of the same policy, on each plot.
-
-\foreach \i/\j in {0/19, 20/39, 40/59, 60/79, 80/99, 100/119, 120/139, 140/153}{
-    \begin{figure}
-        \centering
-        \plotPolicies{\i}{\j}{2}
-        \caption{Execution of policies \i\ to \j, with a budget of 2.}
-        \label{fig:policy-executions-b2-\i}
-    \end{figure}
-}
-
-\foreach \i/\j in {0/19, 20/39, 40/59, 60/79, 80/99, 100/119, 120/139, 140/159, 160/160}{
-    \begin{figure}
-        \centering
-        \plotPolicies{\i}{\j}{3}
-        \caption{Execution of policies \i\ to \j, with a budget of 3.}
-        \label{fig:policy-executions-b3-\i}
-    \end{figure}
-}
-
-\foreach \i/\j in {0/19, 20/39, 40/59, 60/79, 80/93}{
-    \begin{figure}
-        \centering
-        \plotPolicies{\i}{\j}{4}
-        \caption{Execution of policies \i\ to \j, with a budget of 4.}
-        \label{fig:policy-executions-b4-\i}
-    \end{figure}
-}
-
-\foreach \i/\j in {0/19, 20/39, 40/59, 60/79, 80/99, 100/114}{
-    \begin{figure}
-        \centering
-        \plotPolicies{\i}{\j}{5}
-        \caption{Execution of policies \i\ to \j, with a budget of 5.}
-        \label{fig:policy-executions-b5-\i}
-    \end{figure}
-}
-
-\foreach \i/\j in {0/19, 20/39, 40/59, 60/79, 80/99, 100/116}{
-    \begin{figure}
-        \centering
-        \plotPolicies{\i}{\j}{None}
-        \caption{Execution of policies \i\ to \j, with no budget restriction ($b=\infty$).}
-        \label{fig:policy-executions-binf-\i}
-    \end{figure}
-}
 
 \subsection{Experiment parameters}
 \label{sec:pcn-hyperparameters}

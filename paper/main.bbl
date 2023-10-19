@@ -1,122 +1,109 @@
-\begin{thebibliography}{24}
+\begin{thebibliography}{29}
 \providecommand{\natexlab}[1]{#1}
 \providecommand{\url}[1]{\texttt{#1}}
 \expandafter\ifx\csname urlstyle\endcsname\relax
   \providecommand{\doi}[1]{doi: #1}\else
   \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
 
-\bibitem[Libin et~al.(2021)Libin, Moonens, Verstraeten, Perez-Sanjines, Hens,
-  Lemey, and Now{\'e}]{libin2020}
-Pieter J.~K. Libin, Arno Moonens, Timothy Verstraeten, Fabian Perez-Sanjines,
-  Niel Hens, Philippe Lemey, and Ann Now{\'e}.
+\bibitem[Miranda et~al.(2022)Miranda, Pingarilho, Pimentel, Torneri, Seabra, Libin, and Abecasis]{miranda2022tale}
+Mafalda~NS Miranda, Marta Pingarilho, Victor Pimentel, Andrea Torneri, Sofia~G Seabra, Pieter~JK Libin, and Ana~B Abecasis.
+\newblock A tale of three recent pandemics: Influenza, hiv and sars-cov-2.
+\newblock \emph{Frontiers in Microbiology}, 13, 2022.
+
+\bibitem[Libin et~al.(2021{\natexlab{a}})Libin, Moonens, Verstraeten, Perez-Sanjines, Hens, Lemey, and Now{\'e}]{libin2020}
+Pieter J.~K. Libin, Arno Moonens, Timothy Verstraeten, Fabian Perez-Sanjines, Niel Hens, Philippe Lemey, and Ann Now{\'e}.
 \newblock Deep reinforcement learning for large-scale epidemic control.
-\newblock In Yuxiao Dong, Georgiana Ifrim, Dunja Mladeni{\'{c}}, Craig
-  Saunders, and Sofie Van~Hoecke, editors, \emph{ECML}, pages 155--170, Cham,
-  2021. Springer International Publishing.
+\newblock In Yuxiao Dong, Georgiana Ifrim, Dunja Mladeni{\'{c}}, Craig Saunders, and Sofie Van~Hoecke, editors, \emph{ECML}, pages 155--170, Cham, 2021{\natexlab{a}}. Springer International Publishing.
 \newblock ISBN 978-3-030-67670-4.
 
-\bibitem[Hayes et~al.(2021)Hayes, R\u{a}dulescu, Bargiacchi, K{\"a}llstr{\"o}m,
-  Macfarlane, Reymond, Verstraeten, Zintgraf, Dazeley, Heintz, Howley,
-  Irissappane, Mannion, Now\'{e}, Ramos, Restelli, Vamplew, and
-  Roijers]{hayes2021practical}
-Conor~F. Hayes, Roxana R\u{a}dulescu, Eugenio Bargiacchi, Johan
-  K{\"a}llstr{\"o}m, Matthew Macfarlane, Mathieu Reymond, Timothy Verstraeten,
-  Luisa~M. Zintgraf, Richard Dazeley, Fredrik Heintz, Enda Howley, Athirai~A.
-  Irissappane, Patrick Mannion, Ann Now\'{e}, Gabriel Ramos, Marcello Restelli,
-  Peter Vamplew, and Diederik~M. Roijers.
-\newblock A practical guide to multi-objective rl and planning, 2021.
-
-\bibitem[Roijers et~al.(2013)Roijers, Vamplew, Whiteson, and
-  Dazeley]{roijers2013survey}
+\bibitem[Roijers et~al.(2013)Roijers, Vamplew, Whiteson, and Dazeley]{roijers2013survey}
 Diederik~M Roijers, Peter Vamplew, Shimon Whiteson, and Richard Dazeley.
 \newblock A survey of multi-objective sequential decision-making.
 \newblock \emph{JAIR}, 48:\penalty0 67--113, 2013.
 
-\bibitem[Willem et~al.(2021)Willem, Abrams, Libin, Coletti, Kuylen, Petrof,
-  M{\o}gelmose, Wambua, Herzog, Faes, et~al.]{willem2021impact}
-Lander Willem, Steven Abrams, Pieter~JK Libin, Pietro Coletti, Elise Kuylen,
-  Oana Petrof, Signe M{\o}gelmose, James Wambua, Sereina~A Herzog, Christel
-  Faes, et~al.
-\newblock The impact of contact tracing and household bubbles on deconfinement
-  strategies for covid-19.
+\bibitem[Hayes et~al.(2021)Hayes, R\u{a}dulescu, Bargiacchi, K{\"a}llstr{\"o}m, Macfarlane, Reymond, Verstraeten, Zintgraf, Dazeley, Heintz, Howley, Irissappane, Mannion, Now\'{e}, Ramos, Restelli, Vamplew, and Roijers]{hayes2021practical}
+Conor~F. Hayes, Roxana R\u{a}dulescu, Eugenio Bargiacchi, Johan K{\"a}llstr{\"o}m, Matthew Macfarlane, Mathieu Reymond, Timothy Verstraeten, Luisa~M. Zintgraf, Richard Dazeley, Fredrik Heintz, Enda Howley, Athirai~A. Irissappane, Patrick Mannion, Ann Now\'{e}, Gabriel Ramos, Marcello Restelli, Peter Vamplew, and Diederik~M. Roijers.
+\newblock A practical guide to multi-objective rl and planning, 2021.
+
+\bibitem[Willem et~al.(2021)Willem, Abrams, Libin, Coletti, Kuylen, Petrof, M{\o}gelmose, Wambua, Herzog, Faes, et~al.]{willem2021impact}
+Lander Willem, Steven Abrams, Pieter~JK Libin, Pietro Coletti, Elise Kuylen, Oana Petrof, Signe M{\o}gelmose, James Wambua, Sereina~A Herzog, Christel Faes, et~al.
+\newblock The impact of contact tracing and household bubbles on deconfinement strategies for covid-19.
 \newblock \emph{Nature communications}, 12\penalty0 (1):\penalty0 1--9, 2021.
 
-\bibitem[Abrams et~al.(2021)Abrams, Wambua, Santermans, Willem, Kuylen,
-  Coletti, Libin, Faes, Petrof, Herzog, et~al.]{abrams2021modelling}
-Steven Abrams, James Wambua, Eva Santermans, Lander Willem, Elise Kuylen,
-  Pietro Coletti, Pieter Libin, Christel Faes, Oana Petrof, Sereina~A Herzog,
-  et~al.
-\newblock Modelling the early phase of the belgian covid-19 epidemic using a
-  stochastic compartmental model and studying its implied future trajectories.
+\bibitem[Abrams et~al.(2021)Abrams, Wambua, Santermans, Willem, Kuylen, Coletti, Libin, Faes, Petrof, Herzog, et~al.]{abrams2021modelling}
+Steven Abrams, James Wambua, Eva Santermans, Lander Willem, Elise Kuylen, Pietro Coletti, Pieter Libin, Christel Faes, Oana Petrof, Sereina~A Herzog, et~al.
+\newblock Modelling the early phase of the belgian covid-19 epidemic using a stochastic compartmental model and studying its implied future trajectories.
 \newblock \emph{Epidemics}, 35:\penalty0 100449, 2021.
 
 \bibitem[Reymond et~al.(2022)Reymond, Eugenio, and Now\`e]{reymond2022pcn}
 Mathieu Reymond, Bargiacchi Eugenio, and Ann Now\`e.
 \newblock Pareto conditioned networks.
-\newblock In \emph{Proceedings of the 21st International Conference on AAMAS
-  (2022)}, 2022.
+\newblock In \emph{Proceedings of the 21st International Conference on AAMAS (2022)}, 2022.
 
-\bibitem[Zitzler et~al.(2003)Zitzler, Thiele, Laumanns, Fonseca, and
-  Da~Fonseca]{zitzler2003}
-Eckart Zitzler, Lothar Thiele, Marco Laumanns, Carlos~M Fonseca, and
-  Viviane~Grunert Da~Fonseca.
-\newblock Performance assessment of multiobjective optimizers: An analysis and
-  review.
-\newblock \emph{IEEE Transactions on evolutionary computation}, 7\penalty0
-  (2):\penalty0 117--132, 2003.
+\bibitem[Wallinga et~al.(2006)Wallinga, Teunis, and Kretzschmar]{wallinga2006using}
+Jacco Wallinga, Peter Teunis, and Mirjam Kretzschmar.
+\newblock Using data on social contacts to estimate age-specific transmission parameters for respiratory-spread infectious agents.
+\newblock \emph{American journal of epidemiology}, 164\penalty0 (10):\penalty0 936--944, 2006.
 
-\bibitem[Zintgraf et~al.(2015)Zintgraf, Kanters, Roijers, Oliehoek, and
-  Beau]{zintgraf2015}
-Luisa~M Zintgraf, Timon~V Kanters, Diederik~M Roijers, Frans Oliehoek, and
-  Philipp Beau.
+\bibitem[Britton and Lindenstrand(2009)]{britton2009epidemic}
+Tom Britton and David Lindenstrand.
+\newblock Epidemic modelling: aspects where stochasticity matters.
+\newblock \emph{Mathematical biosciences}, 222\penalty0 (2):\penalty0 109--116, 2009.
+
+\bibitem[Bailey(1975)]{bailey1975mathematical}
+Norman~TJ Bailey.
+\newblock The mathematical theory of infectious diseases and its applications.
+\newblock In \emph{The mathematical theory of infectious diseases and its applications}, pages 413--413. Charles Griffin \& Company Ltd 5a Crendon Street, High Wycombe, Bucks HP13 6LE., 1975.
+
+\bibitem[Zitzler et~al.(2003)Zitzler, Thiele, Laumanns, Fonseca, and Da~Fonseca]{zitzler2003}
+Eckart Zitzler, Lothar Thiele, Marco Laumanns, Carlos~M Fonseca, and Viviane~Grunert Da~Fonseca.
+\newblock Performance assessment of multiobjective optimizers: An analysis and review.
+\newblock \emph{IEEE Transactions on evolutionary computation}, 7\penalty0 (2):\penalty0 117--132, 2003.
+
+\bibitem[Zintgraf et~al.(2015)Zintgraf, Kanters, Roijers, Oliehoek, and Beau]{zintgraf2015}
+Luisa~M Zintgraf, Timon~V Kanters, Diederik~M Roijers, Frans Oliehoek, and Philipp Beau.
 \newblock Quality assessment of morl algorithms: A utility-based approach.
-\newblock In \emph{Benelearn 2015: proceedings of the 24th annual ML conference
-  of Belgium and the Netherlands}, 2015.
+\newblock In \emph{Benelearn 2015: proceedings of the 24th annual ML conference of Belgium and the Netherlands}, 2015.
 
-\bibitem[Lillicrap et~al.(2015)Lillicrap, Hunt, Pritzel, Heess, Erez, Tassa,
-  Silver, and Wierstra]{lillicrap2015continuous}
-Timothy~P Lillicrap, Jonathan~J Hunt, Alexander Pritzel, Nicolas Heess, Tom
-  Erez, Yuval Tassa, David Silver, and Daan Wierstra.
+\bibitem[Mnih et~al.(2015)Mnih, Kavukcuoglu, Silver, Rusu, Veness, Bellemare, Graves, Riedmiller, Fidjeland, Ostrovski, et~al.]{mnih2015}
+Volodymyr Mnih, Koray Kavukcuoglu, David Silver, Andrei~A Rusu, Joel Veness, Marc~G Bellemare, Alex Graves, Martin Riedmiller, Andreas~K Fidjeland, Georg Ostrovski, et~al.
+\newblock Human-level control through deep reinforcement learning.
+\newblock \emph{Nature}, 518\penalty0 (7540):\penalty0 529, 2015.
+
+\bibitem[Fu et~al.(2019)Fu, Kumar, Soh, and Levine]{fu2019}
+Justin Fu, Aviral Kumar, Matthew Soh, and Sergey Levine.
+\newblock Diagnosing bottlenecks in deep q-learning algorithms.
+\newblock In \emph{International Conference on Machine Learning}, pages 2021--2030. PMLR, 2019.
+
+\bibitem[Deb et~al.(2000)Deb, Agrawal, Pratap, and Meyarivan]{deb2000}
+Kalyanmoy Deb, Samir Agrawal, Amrit Pratap, and Tanaka Meyarivan.
+\newblock A fast elitist non-dominated sorting genetic algorithm for multi-objective optimization: Nsga-ii.
+\newblock In \emph{International conference on parallel problem solving from nature}, pages 849--858. Springer, 2000.
+
+\bibitem[Shore and Johnson(1980)]{shore1980axiomatic}
+John Shore and Rodney Johnson.
+\newblock Axiomatic derivation of the principle of maximum entropy and the principle of minimum cross-entropy.
+\newblock \emph{IEEE Transactions on information theory}, 26\penalty0 (1):\penalty0 26--37, 1980.
+
+\bibitem[Lillicrap et~al.(2015)Lillicrap, Hunt, Pritzel, Heess, Erez, Tassa, Silver, and Wierstra]{lillicrap2015continuous}
+Timothy~P Lillicrap, Jonathan~J Hunt, Alexander Pritzel, Nicolas Heess, Tom Erez, Yuval Tassa, David Silver, and Daan Wierstra.
 \newblock Continuous control with deep reinforcement learning.
 \newblock \emph{arXiv preprint arXiv:1509.02971}, 2015.
 
 \bibitem[Zur et~al.(2009)Zur, Jiang, Pesce, and Drukker]{zur2009noise}
 Richard~M Zur, Yulei Jiang, Lorenzo~L Pesce, and Karen Drukker.
-\newblock Noise injection for training artificial neural networks: A comparison
-  with weight decay and early stopping.
+\newblock Noise injection for training artificial neural networks: A comparison with weight decay and early stopping.
 \newblock \emph{Medical physics}, 36\penalty0 (10):\penalty0 4810--4818, 2009.
 
-\bibitem[Probert et~al.(2019)Probert, Lakkur, Fonnesbeck, Shea, Runge,
-  Tildesley, and Ferrari]{probert2019context}
-William~JM Probert, Sandya Lakkur, Christopher~J Fonnesbeck, Katriona Shea,
-  Michael~C Runge, Michael~J Tildesley, and Matthew~J Ferrari.
-\newblock Context matters: using reinforcement learning to develop
-  human-readable, state-dependent outbreak response policies.
-\newblock \emph{Philosophical Transactions of the Royal Society B},
-  374\penalty0 (1776):\penalty0 20180277, 2019.
+\bibitem[Probert et~al.(2019)Probert, Lakkur, Fonnesbeck, Shea, Runge, Tildesley, and Ferrari]{probert2019context}
+William~JM Probert, Sandya Lakkur, Christopher~J Fonnesbeck, Katriona Shea, Michael~C Runge, Michael~J Tildesley, and Matthew~J Ferrari.
+\newblock Context matters: using reinforcement learning to develop human-readable, state-dependent outbreak response policies.
+\newblock \emph{Philosophical Transactions of the Royal Society B}, 374\penalty0 (1776):\penalty0 20180277, 2019.
 
-\bibitem[Ernst et~al.(2006)Ernst, Stan, Goncalves, and
-  Wehenkel]{ernst2006clinical}
-Damien Ernst, Guy-Bart Stan, Jorge Goncalves, and Louis Wehenkel.
-\newblock Clinical data based optimal sti strategies for hiv: a reinforcement
-  learning approach.
-\newblock In \emph{Proceedings of the 45th IEEE Conference on Decision and
-  Control}, pages 667--672. IEEE, 2006.
-
-\bibitem[Das et~al.(2008)Das, Savachkin, and Zhu]{das2008large}
-Tapas~K Das, Alex~A Savachkin, and Yiliang Zhu.
-\newblock A large-scale simulation model of pandemic influenza outbreaks for
-  development of dynamic mitigation strategies.
-\newblock \emph{Iie Transactions}, 40\penalty0 (9):\penalty0 893--905, 2008.
-
-\bibitem[Libin et~al.(2018)Libin, Verstraeten, Roijers, Grujic, Theys, Lemey,
-  and Now{\'e}]{libin2018bayesian}
-Pieter~JK Libin, Timothy Verstraeten, Diederik~M Roijers, Jelena Grujic,
-  Kristof Theys, Philippe Lemey, and Ann Now{\'e}.
-\newblock Bayesian best-arm identification for selecting influenza mitigation
-  strategies.
-\newblock In \emph{Joint European Conference on Machine Learning and Knowledge
-  Discovery in Databases}, pages 456--471. Springer, Cham, 2018.
+\bibitem[Libin et~al.(2018)Libin, Verstraeten, Roijers, Grujic, Theys, Lemey, and Now{\'e}]{libin2018bayesian}
+Pieter~JK Libin, Timothy Verstraeten, Diederik~M Roijers, Jelena Grujic, Kristof Theys, Philippe Lemey, and Ann Now{\'e}.
+\newblock Bayesian best-arm identification for selecting influenza mitigation strategies.
+\newblock In \emph{Joint European Conference on Machine Learning and Knowledge Discovery in Databases}, pages 456--471. Springer, Cham, 2018.
 
 \bibitem[Ohi et~al.(2020)Ohi, Mridha, Monowar, Hamid, et~al.]{ohi2020exploring}
 Abu~Quwsar Ohi, MF~Mridha, Muhammad~Mostafa Monowar, Md~Hamid, et~al.
@@ -125,73 +112,42 @@ Abu~Quwsar Ohi, MF~Mridha, Muhammad~Mostafa Monowar, Md~Hamid, et~al.
 
 \bibitem[Kwak et~al.(2021)Kwak, Ling, and Hui]{kwak2021covid}
 Gloria~Hyunjung Kwak, Lowell Ling, and Pan Hui.
-\newblock Deep reinforcement learning approaches for global public health
-  strategies for covid-19 pandemic.
+\newblock Deep reinforcement learning approaches for global public health strategies for covid-19 pandemic.
 \newblock \emph{PLOS ONE}, 16\penalty0 (5):\penalty0 1--15, 05 2021.
 
-\bibitem[Bastani et~al.(2021)Bastani, Drakopoulos, Gupta, Vlachogiannis,
-  Hadjicristodoulou, Lagiou, Magiorkinis, Paraskevis, and
-  Tsiodras]{bastani2021efficient}
-Hamsa Bastani, Kimon Drakopoulos, Vishal Gupta, Ioannis Vlachogiannis, Christos
-  Hadjicristodoulou, Pagona Lagiou, Gkikas Magiorkinis, Dimitrios Paraskevis,
-  and Sotirios Tsiodras.
+\bibitem[Bastani et~al.(2021)Bastani, Drakopoulos, Gupta, Vlachogiannis, Hadjicristodoulou, Lagiou, Magiorkinis, Paraskevis, and Tsiodras]{bastani2021efficient}
+Hamsa Bastani, Kimon Drakopoulos, Vishal Gupta, Ioannis Vlachogiannis, Christos Hadjicristodoulou, Pagona Lagiou, Gkikas Magiorkinis, Dimitrios Paraskevis, and Sotirios Tsiodras.
 \newblock Efficient and targeted covid-19 border testing via rl.
 \newblock \emph{Nature}, 599\penalty0 (7883):\penalty0 108--113, 2021.
 
 \bibitem[Wan et~al.(2021)Wan, Zhang, and Song]{wan2021multi}
 Runzhe Wan, Xinyu Zhang, and Rui Song.
-\newblock Multi-objective model-based reinforcement learning for infectious
-  disease control.
-\newblock In \emph{Proceedings of the 27th ACM SIGKDD Conference on Knowledge
-  Discovery \& Data Mining}, pages 1634--1644, 2021.
+\newblock Multi-objective model-based reinforcement learning for infectious disease control.
+\newblock In \emph{Proceedings of the 27th ACM SIGKDD Conference on Knowledge Discovery \& Data Mining}, pages 1634--1644, 2021.
 
-\bibitem[Vamplew et~al.(2008)Vamplew, Yearwood, Dazeley, and
-  Berry]{vamplew2008limitations}
+\bibitem[Vamplew et~al.(2008)Vamplew, Yearwood, Dazeley, and Berry]{vamplew2008limitations}
 Peter Vamplew, John Yearwood, Richard Dazeley, and Adam Berry.
-\newblock On the limitations of scalarisation for multi-objective reinforcement
-  learning of pareto fronts.
-\newblock In \emph{Australasian joint conference on artificial intelligence},
-  pages 372--378. Springer, 2008.
+\newblock On the limitations of scalarisation for multi-objective reinforcement learning of pareto fronts.
+\newblock In \emph{Australasian joint conference on artificial intelligence}, pages 372--378. Springer, 2008.
 
-\bibitem[Kompella et~al.(2020)Kompella, Capobianco, Jong, Browne, Fox, Meyers,
-  Wurman, and Stone]{kompella2020reinforcement}
-Varun Kompella, Roberto Capobianco, Stacy Jong, Jonathan Browne, Spencer Fox,
-  Lauren Meyers, Peter Wurman, and Peter Stone.
-\newblock Reinforcement learning for optimization of covid-19 mitigation
-  policies.
+\bibitem[Kompella et~al.(2020)Kompella, Capobianco, Jong, Browne, Fox, Meyers, Wurman, and Stone]{kompella2020reinforcement}
+Varun Kompella, Roberto Capobianco, Stacy Jong, Jonathan Browne, Spencer Fox, Lauren Meyers, Peter Wurman, and Peter Stone.
+\newblock Reinforcement learning for optimization of covid-19 mitigation policies.
 \newblock \emph{arXiv preprint arXiv:2010.10560}, 2020.
 
-\bibitem[Wallinga et~al.(2006)Wallinga, Teunis, and
-  Kretzschmar]{wallinga2006using}
-Jacco Wallinga, Peter Teunis, and Mirjam Kretzschmar.
-\newblock Using data on social contacts to estimate age-specific transmission
-  parameters for respiratory-spread infectious agents.
-\newblock \emph{American journal of epidemiology}, 164\penalty0 (10):\penalty0
-  936--944, 2006.
+\bibitem[Torneri et~al.(2021)Torneri, Willem, Colizza, Kremer, Meuris, Darcis, Hens, and Libin]{torneri2021controlling}
+Andrea Torneri, Lander Willem, Vittoria Colizza, Cecile Kremer, Christelle Meuris, Gilles Darcis, Niel Hens, and Pieter~JK Libin.
+\newblock Controlling sars-cov-2 in schools using repetitive testing strategies (preprint).
+\newblock 2021.
 
-\bibitem[Bailey(1975)]{bailey1975mathematical}
-Norman~TJ Bailey.
-\newblock The mathematical theory of infectious diseases and its applications.
-\newblock In \emph{The mathematical theory of infectious diseases and its
-  applications}, pages 413--413. Charles Griffin \& Company Ltd 5a Crendon
-  Street, High Wycombe, Bucks HP13 6LE., 1975.
+\bibitem[Torneri et~al.(2020)Torneri, Libin, Vanderlocht, Vandamme, Neyts, and Hens]{torneri2020prospect}
+Andrea Torneri, Pieter Libin, Joris Vanderlocht, Anne-Mieke Vandamme, Johan Neyts, and Niel Hens.
+\newblock A prospect on the use of antiviral drugs to control local outbreaks of covid-19.
+\newblock \emph{BMC medicine}, 18\penalty0 (1):\penalty0 1--9, 2020.
 
-\bibitem[Beigi et~al.(2021)Beigi, Yousefpour, Yasami, G{\'o}mez-Aguilar,
-  Bekiros, and Jahanshahi]{beigi2021application}
-Alireza Beigi, Amin Yousefpour, Amirreza Yasami, JF~G{\'o}mez-Aguilar, Stelios
-  Bekiros, and Hadi Jahanshahi.
-\newblock Application of reinforcement learning for effective vaccination
-  strategies of coronavirus disease 2019 (covid-19).
-\newblock \emph{The European Physical Journal Plus}, 136\penalty0 (5):\penalty0
-  1--22, 2021.
-
-\bibitem[Awasthi et~al.(2020)Awasthi, Guliani, Khan, Vashishtha, Gill, Bhatt,
-  Nagori, Gupta, Kumaraguru, and Sethi]{awasthi2020vacsim}
-Raghav Awasthi, Keerat~Kaur Guliani, Saif~Ahmad Khan, Aniket Vashishtha,
-  Mehrab~Singh Gill, Arshita Bhatt, Aditya Nagori, Aniket Gupta, Ponnurangam
-  Kumaraguru, and Tavpritesh Sethi.
-\newblock Vacsim: Learning effective strategies for covid-19 vaccine
-  distribution using reinforcement learning.
-\newblock \emph{arXiv preprint arXiv:2009.06602}, 2020.
+\bibitem[Libin et~al.(2021{\natexlab{b}})Libin, Willem, Verstraeten, Torneri, Vanderlocht, and Hens]{libin2021assessing}
+Pieter~JK Libin, Lander Willem, Timothy Verstraeten, Andrea Torneri, Joris Vanderlocht, and Niel Hens.
+\newblock Assessing the feasibility and effectiveness of household-pooled universal testing to control covid-19 epidemics.
+\newblock \emph{PLoS computational biology}, 17\penalty0 (3):\penalty0 e1008688, 2021{\natexlab{b}}.
 
 \end{thebibliography}

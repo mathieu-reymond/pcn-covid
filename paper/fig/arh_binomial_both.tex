@@ -4,7 +4,9 @@
         % height=6cm,
         xlabel={total daily new hospitalizations},
         ylabel={total lost contacts},
-        width=0.45\textwidth
+        width=0.45\textwidth,
+        x dir= reverse,
+        y dir= reverse,
     }
     \begin{groupplot}[
         group style={
@@ -21,7 +23,7 @@
     \foreach \b/\c in {2/pc1, 3/pc2, 4/pc3, 5/pc4, {None}/pc5}
     {
         \edef\temp{
-            \noexpand\addplot[fill opacity=0.5,\c] table [x=mu_o_1, y=mu_o_5, col sep=comma] {data/cs/arh/binomial/interpolated/budget_\b.csv};
+            \noexpand\addplot[fill opacity=0.5,\c] table [x expr=-1*\noexpand\thisrow{mu_o_1}, y expr=-1*\noexpand\thisrow{mu_o_5}, col sep=comma] {data/cs/arh/binomial/interpolated/budget_\b.csv};
         }
         \temp
     }
@@ -29,22 +31,22 @@
     \foreach \b/\c in {2/pc1, 3/pc2, 4/pc3, 5/pc4, {None}/pc5}
     {
         \edef\temp{
-            \noexpand\addplot[name path=upper\b, draw=none] table [x=mu_o_1, y expr=\noexpand\thisrow{mu_o_5}+\noexpand\thisrow{std_o_5}, col sep=comma] {data/cs/arh/binomial/interpolated/budget_\b.csv};
-            \noexpand\addplot[name path=lower\b, draw=none] table [x=mu_o_1, y expr=\noexpand\thisrow{mu_o_5}-\noexpand\thisrow{std_o_5}, col sep=comma] {data/cs/arh/binomial/interpolated/budget_\b.csv};
+            \noexpand\addplot[name path=upper\b, draw=none] table [x expr=-1*\noexpand\thisrow{mu_o_1}, y expr=-1*\noexpand\thisrow{mu_o_5}+\noexpand\thisrow{std_o_5}, col sep=comma] {data/cs/arh/binomial/interpolated/budget_\b.csv};
+            \noexpand\addplot[name path=lower\b, draw=none] table [x expr=-1*\noexpand\thisrow{mu_o_1}, y expr=-1*\noexpand\thisrow{mu_o_5}-\noexpand\thisrow{std_o_5}, col sep=comma] {data/cs/arh/binomial/interpolated/budget_\b.csv};
             \noexpand\addplot[\c!15] fill between[of={upper\b} and {lower\b}];
         }
         \temp
     }
-    \addplot[only marks,mark=+] table [x=o_0, y=o_1, col sep=comma] {data/cs/cs_fixed.csv};
+    \addplot[only marks,mark=+] table [x expr=-1*\thisrow{o_0}, y expr=-1*\thisrow{o_1}, col sep=comma] {data/cs/cs_fixed.csv};
     % best performing run
     \nextgroupplot[mark size=1pt,draw opacity=1]
     \foreach \b/\c in {2/pc1, 3/pc2, 4/pc3, 5/pc4, {None}/pc5}
     {
         \edef\temp{
-            \noexpand\addplot[only marks,mark=o,fill opacity=0.5,\c] table [x=o_1, y=o_5, col sep=comma] {data/cs/arh/binomial/budget_\b.csv};
+            \noexpand\addplot[only marks,mark=o,fill opacity=0.5,\c] table [x expr=-1*\noexpand\thisrow{o_1}, y expr=-1*\noexpand\thisrow{o_5}, col sep=comma] {data/cs/arh/binomial/budget_\b.csv};
         }
         \temp
     }
-    \addplot[only marks,mark=+] table [x=o_0, y=o_1, col sep=comma] {data/cs/cs_fixed.csv};
+    \addplot[only marks,mark=+] table [x expr=-1*\thisrow{o_0}, y expr=-1*\thisrow{o_1}, col sep=comma] {data/cs/cs_fixed.csv};
     \end{groupplot}
 \end{tikzpicture}

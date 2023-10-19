@@ -1,49 +1,48 @@
-This is BibTeX, Version 0.99d (TeX Live 2022/Arch Linux)
+This is BibTeX, Version 0.99d (TeX Live 2023/Arch Linux)
 Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
 The top-level auxiliary file: main.aux
 The style file: unsrtnat.bst
 Database file #1: references.bib
-Warning--I didn't find a database entry for "mnih2015"
-Warning--I didn't find a database entry for "fu2019"
-You've used 24 entries,
+Warning--empty journal in torneri2021controlling
+You've used 29 entries,
             2481 wiz_defined-function locations,
-            708 strings with 11114 characters,
-and the built_in function-call counts, 12142 in all, are:
-= -- 871
-> -- 981
-< -- 7
-+ -- 351
-- -- 303
-* -- 1094
-:= -- 2029
-add.period$ -- 77
-call.type$ -- 24
-change.case$ -- 48
-chr.to.int$ -- 24
-cite$ -- 24
-duplicate$ -- 529
-empty$ -- 941
-format.name$ -- 327
-if$ -- 2511
-int.to.chr$ -- 1
-int.to.str$ -- 25
-missing$ -- 23
-newline$ -- 128
-num.names$ -- 74
-pop$ -- 220
+            736 strings with 12126 characters,
+and the built_in function-call counts, 14526 in all, are:
+= -- 1049
+> -- 1158
+< -- 10
++ -- 416
+- -- 357
+* -- 1305
+:= -- 2420
+add.period$ -- 93
+call.type$ -- 29
+change.case$ -- 58
+chr.to.int$ -- 28
+cite$ -- 30
+duplicate$ -- 637
+empty$ -- 1131
+format.name$ -- 390
+if$ -- 3009
+int.to.chr$ -- 2
+int.to.str$ -- 30
+missing$ -- 28
+newline$ -- 153
+num.names$ -- 89
+pop$ -- 262
 preamble$ -- 1
-purify$ -- 24
+purify$ -- 29
 quote$ -- 0
-skip$ -- 313
+skip$ -- 379
 stack$ -- 0
-substring$ -- 500
-swap$ -- 111
-text.length$ -- 6
+substring$ -- 599
+swap$ -- 134
+text.length$ -- 7
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 168
-warning$ -- 0
-while$ -- 88
+type$ -- 203
+warning$ -- 1
+while$ -- 105
 width$ -- 0
-write$ -- 319
-(There were 2 warnings)
+write$ -- 384
+(There was 1 warning)

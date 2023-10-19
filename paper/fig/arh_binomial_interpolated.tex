@@ -1,0 +1,31 @@
+\begin{tikzpicture}
+    \pgfplotsset{
+        scale only axis,
+        % height=6cm,
+        xlabel={total number of daily new hospitalizations},
+        ylabel={total lost contacts}
+    }
+    \begin{axis}[
+    legend entries={{$\text{PCN}_{b=2}$}, {$\text{PCN}_{b=3}$}, {$\text{PCN}_{b=4}$}, {$\text{PCN}_{b=5}$}, {$\text{PCN}$}, {Fixed}},
+    % width=9.5cm,
+    mark size=1pt,
+    ]
+    \foreach \b/\c in {2/pc1, 3/pc2, 4/pc3, 5/pc4, {None}/pc5}
+    {
+        \edef\temp{
+            \noexpand\addplot[draw opacity=1,fill opacity=0.5,\c] table [x=mu_o_1, y=mu_o_5, col sep=comma] {data/cs/arh/binomial/interpolated/budget_\b.csv};
+        }
+        \temp
+    }
+    \foreach \b/\c in {2/pc1, 3/pc2, 4/pc3, 5/pc4, {None}/pc5}
+    {
+        \edef\temp{
+            \noexpand\addplot[name path=upper\b, draw=none] table [x=mu_o_1, y expr=\noexpand\thisrow{mu_o_5}+\noexpand\thisrow{std_o_5}, col sep=comma] {data/cs/arh/binomial/interpolated/budget_\b.csv};
+            \noexpand\addplot[name path=lower\b, draw=none] table [x=mu_o_1, y expr=\noexpand\thisrow{mu_o_5}-\noexpand\thisrow{std_o_5}, col sep=comma] {data/cs/arh/binomial/interpolated/budget_\b.csv};
+            \noexpand\addplot[\c!20] fill between[of={upper\b} and {lower\b}];
+        }
+        \temp
+    }
+    \addplot[only marks,mark=+] table [x=o_0, y=o_1, col sep=comma] {data/cs/cs_fixed.csv};
+    \end{axis}
+\end{tikzpicture}

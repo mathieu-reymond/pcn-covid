@@ -18,23 +18,29 @@
             },
           width=9.5cm,
           axis y line*=left,
+          date ZERO=2020-05-04,
+          ymax=4100,
           xlabel={time},
           ylabel={individuals},
-          y tick label style={/pgf/number format/sci}
+          ytick={0,1000,2000,3000},
+          scaled y ticks={base 10:-3},
+          every y tick scale label/.style={
+              at={(0,1)},yshift=-1pt,anchor=north west,inner sep=0pt
+          }
         ]
         % GROUP WITH LEFT Y-AXIS: PEOPLE (HOSP, ICU, DEATHS)
-        \nextgroupplot[scaled y ticks=false]
+        \nextgroupplot
         \addplot[mark=none, cyan] table [x=dates, y=i_hosp_new, col sep=comma] {data/transitions/arh/binomial/budget_5/policies-transitions/0/run_0.csv};
         \label{i_hosp_new}
         \addplot[mark=none, orange] table [x=dates, y=i_icu_new, col sep=comma] {data/transitions/arh/binomial/budget_5/policies-transitions//0/run_0.csv};
         \label{i_icu_new}
         \addplot[mark=none, red] table [x=dates, y=d_new, col sep=comma] {data/transitions/arh/binomial/budget_5/policies-transitions//0/run_0.csv};
         \label{d_new}
-        \nextgroupplot[scaled y ticks=false]
+        \nextgroupplot
         \addplot[mark=none, cyan] table [x=dates, y=i_hosp_new, col sep=comma] {data/transitions/arh/binomial/budget_5/policies-transitions/45/run_0.csv};
         \addplot[mark=none, orange] table [x=dates, y=i_icu_new, col sep=comma] {data/transitions/arh/binomial/budget_5/policies-transitions/45/run_0.csv};
         \addplot[mark=none, red] table [x=dates, y=d_new, col sep=comma] {data/transitions/arh/binomial/budget_5/policies-transitions/45/run_0.csv};
-        \nextgroupplot[scaled y ticks=false]
+        \nextgroupplot
         \addplot[mark=none, cyan] table [x=dates, y=i_hosp_new, col sep=comma] {data/transitions/arh/binomial/budget_5/policies-transitions/114/run_0.csv};
         \addplot[mark=none, orange] table [x=dates, y=i_icu_new, col sep=comma] {data/transitions/arh/binomial/budget_5/policies-transitions/114/run_0.csv};
         \addplot[mark=none, red] table [x=dates, y=d_new, col sep=comma] {data/transitions/arh/binomial/budget_5/policies-transitions/114/run_0.csv};

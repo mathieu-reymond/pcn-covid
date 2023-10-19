@@ -1,0 +1,108 @@
+\tikzsetnextfilename{arh_inflection_point}
+\begin{tikzpicture}
+    \pgfplotsset{
+          scale only axis,
+          date coordinates in=x,
+          xticklabel=\day/\month,
+          height=2cm,
+          every axis title/.append style={at={(0.07,0.0)}},
+        }
+        \begin{groupplot}[
+        group style={
+                % set how the plots should be organized
+                group size=1 by 5,
+                % only show ticklabels and axis labels on the bottom
+                y descriptions at=edge left,
+                x descriptions at=edge bottom,
+                % set the `vertical sep' to zero
+                horizontal sep=0pt,
+                vertical sep=0pt,
+            },
+          width=9.5cm,
+          axis y line*=left,
+          xlabel={time},
+          date ZERO=2020-05-04,
+          ylabel={individuals},
+          ymin=-10,
+          ymax=120,
+          ytick={0,25,50,75,100},
+          % scaled y ticks={base 10:-3},
+          % every y tick scale label/.style={
+          %     at={(0,1)},yshift=-1pt,anchor=north west,inner sep=0pt
+          % }
+        ]
+        % GROUP WITH LEFT Y-AXIS: PEOPLE (HOSP, ICU, DEATHS)
+        \nextgroupplot[scaled y ticks=false, title=$\text{PCN}_{b=2}$]
+        \addplot[mark=none, cyan] table [x=dates, y=i_hosp_new, col sep=comma] {data/transitions/arh/binomial/budget_2/policies-transitions/136/run_0.csv};
+        \label{i_hosp_new}
+        \addplot[mark=none, orange] table [x=dates, y=i_icu_new, col sep=comma] {data/transitions/arh/binomial/budget_2/policies-transitions/136/run_0.csv};
+        \label{i_icu_new}
+        \addplot[mark=none, red] table [x=dates, y=d_new, col sep=comma] {data/transitions/arh/binomial/budget_2/policies-transitions/136/run_0.csv};
+        \label{d_new}
+        \nextgroupplot[scaled y ticks=false, title=$\text{PCN}_{b=3}$]
+        \addplot[mark=none, cyan] table [x=dates, y=i_hosp_new, col sep=comma] {data/transitions/arh/binomial/budget_3/policies-transitions/136/run_0.csv};
+        \addplot[mark=none, orange] table [x=dates, y=i_icu_new, col sep=comma] {data/transitions/arh/binomial/budget_3/policies-transitions/136/run_0.csv};
+        \addplot[mark=none, red] table [x=dates, y=d_new, col sep=comma] {data/transitions/arh/binomial/budget_3/policies-transitions/136/run_0.csv};
+        \nextgroupplot[scaled y ticks=false, title=$\text{PCN}_{b=4}$]
+        \addplot[mark=none, cyan] table [x=dates, y=i_hosp_new, col sep=comma] {data/transitions/arh/binomial/budget_4/policies-transitions/73/run_0.csv};
+        \addplot[mark=none, orange] table [x=dates, y=i_icu_new, col sep=comma] {data/transitions/arh/binomial/budget_4/policies-transitions/73/run_0.csv};
+        \addplot[mark=none, red] table [x=dates, y=d_new, col sep=comma] {data/transitions/arh/binomial/budget_4/policies-transitions/73/run_0.csv};
+        \nextgroupplot[scaled y ticks=false, title=$\text{PCN}_{b=5}$]
+        \addplot[mark=none, cyan] table [x=dates, y=i_hosp_new, col sep=comma] {data/transitions/arh/binomial/budget_5/policies-transitions/86/run_0.csv};
+        \addplot[mark=none, orange] table [x=dates, y=i_icu_new, col sep=comma] {data/transitions/arh/binomial/budget_5/policies-transitions/86/run_0.csv};
+        \addplot[mark=none, red] table [x=dates, y=d_new, col sep=comma] {data/transitions/arh/binomial/budget_5/policies-transitions/86/run_0.csv};
+        % \nextgroupplot[scaled y ticks=false, title=$\text{PCN}_{b=\infty}$]
+        % \addplot[mark=none, cyan] table [x=dates, y=i_hosp_new, col sep=comma] {data/transitions/arh/binomial/budget_None/policies-transitions/48/run_0.csv};
+        % \addplot[mark=none, orange] table [x=dates, y=i_icu_new, col sep=comma] {data/transitions/arh/binomial/budget_None/policies-transitions/48/run_0.csv};
+        % \addplot[mark=none, red] table [x=dates, y=d_new, col sep=comma] {data/transitions/arh/binomial/budget_None/policies-transitions/48/run_0.csv};
+        \end{groupplot}
+        % GROUP WITH RIGHT Y-AXIS: ACTIONS (P_W, P_S, P_L)
+        \begin{groupplot}[
+        group style={
+                % set how the plots should be organized
+                group size=1 by 5,
+                % only show ticklabels and axis labels on the bottom
+                y descriptions at=edge right,
+                x descriptions at=edge bottom,
+                % set the `vertical sep' to zero
+                horizontal sep=0pt,
+                vertical sep=0pt
+            },
+          width=9.5cm,
+          axis y line*=right,
+          axis x line=none,
+          ymax=1.1,
+          ylabel={proportion},
+          legend style={at={(0.5,1)},anchor=south},
+        %   legend pos=outer north east,
+          legend columns=3, 
+          legend cell align=left,
+        ]
+        \nextgroupplot[scaled y ticks=false]
+        \addplot[mark=none, dashed, blue] table [x=dates, y=p_w, col sep=comma] {data/transitions/arh/binomial/budget_2/policies-transitions/136/run_0.csv};
+        \label{p_w}
+        \addplot[mark=none, dashed, magenta] table [x=dates, y=p_s, col sep=comma] {data/transitions/arh/binomial/budget_2/policies-transitions/136/run_0.csv};
+        \label{p_s}
+        \addplot[mark=none, dashed, darkgray] table [x=dates, y=p_l, col sep=comma] {data/transitions/arh/binomial/budget_2/policies-transitions/136/run_0.csv};
+        \label{p_l}
+        \addlegendimage{mark=none, cyan}\addlegendentry{$p_w$}
+        \addlegendimage{mark=none, orange}\addlegendentry{$p_s$}
+        \addlegendimage{mark=none, red}\addlegendentry{$p_l$}
+        \addlegendimage{/pgfplots/refstyle=p_w}\addlegendentry{{daily new hosp}}
+        \addlegendimage{/pgfplots/refstyle=p_s}\addlegendentry{{daily new ICU}}
+        \addlegendimage{/pgfplots/refstyle=p_l}\addlegendentry{{daily deaths}}
+        \nextgroupplot[scaled y ticks=false]
+        \addplot[mark=none, dashed, blue] table [x=dates, y=p_w, col sep=comma] {data/transitions/arh/binomial/budget_3/policies-transitions/136/run_0.csv};
+        \addplot[mark=none, dashed, magenta] table [x=dates, y=p_s, col sep=comma] {data/transitions/arh/binomial/budget_3/policies-transitions/136/run_0.csv};
+        \addplot[mark=none, dashed, darkgray] table [x=dates, y=p_l, col sep=comma] {data/transitions/arh/binomial/budget_3/policies-transitions/136/run_0.csv};
+        \nextgroupplot[scaled y ticks=false]
+        \addplot[mark=none, dashed, blue] table [x=dates, y=p_w, col sep=comma] {data/transitions/arh/binomial/budget_4/policies-transitions/73/run_0.csv};
+        \addplot[mark=none, dashed, magenta] table [x=dates, y=p_s, col sep=comma] {data/transitions/arh/binomial/budget_4/policies-transitions/73/run_0.csv};
+        \addplot[mark=none, dashed, darkgray] table [x=dates, y=p_l, col sep=comma] {data/transitions/arh/binomial/budget_4/policies-transitions/73/run_0.csv};
+        \nextgroupplot[scaled y ticks=false]
+        \addplot[mark=none, dashed, blue] table [x=dates, y=p_w, col sep=comma] {data/transitions/arh/binomial/budget_5/policies-transitions/86/run_0.csv};
+        \addplot[mark=none, dashed, magenta] table [x=dates, y=p_s, col sep=comma] {data/transitions/arh/binomial/budget_5/policies-transitions/86/run_0.csv};
+        \addplot[mark=none, dashed, darkgray] table [x=dates, y=p_l, col sep=comma] {data/transitions/arh/binomial/budget_5/policies-transitions/86/run_0.csv};
+        \end{groupplot}
+      \end{tikzpicture}
+    
