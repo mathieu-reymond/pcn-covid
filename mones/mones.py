@@ -59,10 +59,11 @@ def run_episode(env, model):
         with torch.no_grad():
             obs = [torch.tensor([o_]) for o_ in o] if type(o) == tuple else torch.tensor([o])
             actor_out = model(obs)
-            action = actor_out
-            action = torch.argmax(actor_out, 1)
+            action = actor_out.numpy().flatten()
+            # TODO hacky
+            if model.__class__.__name__ != 'ContinuousHead':
+                action = np.argmax(action)
 
-            action = action.numpy().flatten()[0]
             actions.append(action)
 
         n_o, r, done, _ = env.step(action)
