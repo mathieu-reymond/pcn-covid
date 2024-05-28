@@ -1,0 +1,63 @@
+\begin{tikzpicture}
+    \pgfplotsset{
+        scale only axis,
+        % height=4cm,
+        xlabel={total daily new hospitalizations},
+        ylabel={total lost contacts},
+        width=0.45\textwidth,
+        every axis title/.append style={at={(0.45,0.0)}},
+        x dir= reverse,
+        y dir= reverse,
+    }
+    \begin{groupplot}[
+        group style={
+            group size=2 by 3,
+            y descriptions at=edge left,
+            x descriptions at=edge bottom,
+            vertical sep=0pt,
+            horizontal sep=0pt,
+        },
+        % legend entries={{$\text{PCN}_{b=2}$}, {$\text{PCN}_{b=3}$}, {$\text{PCN}_{b=4}$}, {$\text{PCN}_{b=5}$}, {$\text{PCN}$}, {Fixed}},
+    ]
+    % interpolated plot for MONES
+    \nextgroupplot[mark size=1pt,draw opacity=1,legend entries={{$\text{MONES}_{b=2}$}, {$\text{MONES}_{b=3}$}, {$\text{MONES}_{b=4}$}, {$\text{MONES}_{b=5}$}, {$\text{MONES}$}, {Fixed}},title={MONES algorithm, different budgets}]
+    % mean line
+    \foreach \b/\c in {2/pc1, 3/pc2, 4/pc3, 5/pc4, {None}/pc5}
+    {
+        \edef\temp{
+            \noexpand\addplot[fill opacity=0.5,\c] table [x expr=-1*\noexpand\thisrow{mu_o_1}, y expr=-1*\noexpand\thisrow{mu_o_5}, col sep=comma] {data/mones/arh/binomial/interpolated/budget_\b.csv};
+        }
+        \temp
+    }
+    % std fillbetween, has to be after means for legend order
+    \foreach \b/\c in {2/pc1, 3/pc2, 4/pc3, 5/pc4, {None}/pc5}
+    {
+        \edef\temp{
+            \noexpand\addplot[name path=upper\b, draw=none] table [x expr=-1*\noexpand\thisrow{mu_o_1}, y expr=-1*\noexpand\thisrow{mu_o_5}+\noexpand\thisrow{std_o_5}, col sep=comma] {data/mones/arh/binomial/interpolated/budget_\b.csv};
+            \noexpand\addplot[name path=lower\b, draw=none] table [x expr=-1*\noexpand\thisrow{mu_o_1}, y expr=-1*\noexpand\thisrow{mu_o_5}-\noexpand\thisrow{std_o_5}, col sep=comma] {data/mones/arh/binomial/interpolated/budget_\b.csv};
+            \noexpand\addplot[\c!15] fill between[of={upper\b} and {lower\b}];
+        }
+        \temp
+    }
+    \addplot[only marks,mark=+] table [x expr=-1*\thisrow{o_0}, y expr=-1*\thisrow{o_1}, col sep=comma] {data/cs/cs_fixed.csv};
+    % ARI vs ARH per budget
+    \pgfplotsforeachungrouped \b in {2, 3, 4, 5, {None}}
+    {
+        % mean plots
+        \edef\temp{
+            \noexpand\nextgroupplot[draw opacity=1,legend entries={$\text{PCN}_{b=\b}$, $\text{MONES}_{b=\b}$},title={budget \b}]
+            \noexpand\addplot[fill opacity=0.5,pc1] table [x expr=-1*\noexpand\thisrow{mu_o_1}, y expr=-1*\noexpand\thisrow{mu_o_5}, col sep=comma] {data/cs/arh/binomial/interpolated/budget_\b.csv};
+            \noexpand\addplot[fill opacity=0.5,pc2] table [x expr=-1*\noexpand\thisrow{mu_o_1}, y expr=-1*\noexpand\thisrow{mu_o_5}, col sep=comma] {data/mones/arh/binomial/interpolated/budget_\b.csv};
+            % std plots
+            \noexpand\addplot[name path=binomialupper\b, draw=none] table [x expr=-1*\noexpand\thisrow{mu_o_1}, y expr=-1*\noexpand\thisrow{mu_o_5}+\noexpand\thisrow{std_o_5}, col sep=comma] {data/cs/arh/binomial/interpolated/budget_\b.csv};
+            \noexpand\addplot[name path=binomiallower\b, draw=none] table [x expr=-1*\noexpand\thisrow{mu_o_1}, y expr=-1*\noexpand\thisrow{mu_o_5}-\noexpand\thisrow{std_o_5}, col sep=comma] {data/cs/arh/binomial/interpolated/budget_\b.csv};
+            \noexpand\addplot[pc1!15] fill between[of={binomialupper\b} and {binomiallower\b}];
+
+            \noexpand\addplot[name path=odeupper\b, draw=none] table [x expr=-1*\noexpand\thisrow{mu_o_1}, y expr=-1*\noexpand\thisrow{mu_o_5}+\noexpand\thisrow{std_o_5}, col sep=comma] {data/mones/arh/binomial/interpolated/budget_\b.csv};
+            \noexpand\addplot[name path=odelower\b, draw=none] table [x expr=-1*\noexpand\thisrow{mu_o_1}, y expr=-1*\noexpand\thisrow{mu_o_5}-\noexpand\thisrow{std_o_5}, col sep=comma] {data/mones/arh/binomial/interpolated/budget_\b.csv};
+            \noexpand\addplot[pc2!15] fill between[of={odeupper\b} and {odelower\b}];
+        }
+        \temp
+    }
+    \end{groupplot}
+\end{tikzpicture}
