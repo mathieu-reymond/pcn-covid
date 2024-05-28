@@ -1,4 +1,4 @@
-\begin{thebibliography}{29}
+\begin{thebibliography}{30}
 \providecommand{\natexlab}[1]{#1}
 \providecommand{\url}[1]{\texttt{#1}}
 \expandafter\ifx\csname urlstyle\endcsname\relax
@@ -149,5 +149,10 @@ Andrea Torneri, Pieter Libin, Joris Vanderlocht, Anne-Mieke Vandamme, Johan Neyt
 Pieter~JK Libin, Lander Willem, Timothy Verstraeten, Andrea Torneri, Joris Vanderlocht, and Niel Hens.
 \newblock Assessing the feasibility and effectiveness of household-pooled universal testing to control covid-19 epidemics.
 \newblock \emph{PLoS computational biology}, 17\penalty0 (3):\penalty0 e1008688, 2021{\natexlab{b}}.
+
+\bibitem[Parisi et~al.(2017)Parisi, Pirotta, and Peters]{parisi2017manifold}
+Simone Parisi, Matteo Pirotta, and Jan Peters.
+\newblock Manifold-based multi-objective policy search with sample reuse.
+\newblock \emph{Neurocomputing}, 263:\penalty0 3--14, 2017.
 
 \end{thebibliography}

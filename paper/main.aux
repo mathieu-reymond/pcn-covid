@@ -162,6 +162,8 @@
 \newlabel{fig:policy-execution}{{5}{13}{Selection of policies learned by $\text {PCN}_{b=5}$, from most restrictive in terms of social burden (top) to least restrictive (bottom). The x-axis represents the time, starting from the end of the lockdown, on the 4th of May, until the end of the school holidays, on the 1st of September. Since the lockdown is simulated before the start of the exit strategy, the start-state differs for each episode (i.e., the hospital already contains infected individuals). The left y-axis represents the number of individuals affected by the epidemic. The full-lined plots represent the number of individuals admitted into the hospital, ICU and deceased between the last timestep and the current one. The plot showing the newly deceased individuals closely relates to the ICU admissions. The right y-axis represents the proportional reduction in effect, with 1 meaning a business-as-usual policy, and 0 meaning a complete suppression of social contacts. The dotted-lined plots represent the proportional reductions for the work, leasure and school environments. We note that the school reduction automatically goes to 0 at the start of the school holidays. \relax }{figure.caption.10}{}}
 \newlabel{fig:policy-execution@cref}{{[figure][5][]5}{[1][13][]13}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Impact of budgets on the coverage set}{13}{subsection.4.2}\protected@file@percent }
+\newlabel{sec:pf-binomial-arh-budgets}{{4.2}{13}{Impact of budgets on the coverage set}{subsection.4.2}{}}
+\newlabel{sec:pf-binomial-arh-budgets@cref}{{[subsection][2][4]4.2}{[1][13][]13}}
 \def \dpthimport {\expandafter \gdef \csname pgfplots@labelstyle@i_hosp_new\endcsname {mark={none},cyan={\pgfkeysnovalue }}}\dpthimport 
 \def \dpthimport {\expandafter \gdef \csname pgfplots@show@ref@i_hosp_new\endcsname {\begingroup \def \pgfplots@draw@image {\def \tikz@plot@handler {\pgfkeys {/pgf/plots/@handler options/.cd, start=\relax , end macro=\relax , point macro=\pgfutil@gobble , jump macro=\relax , special macro=\pgfutil@gobble , point macro=\pgf@plot@line@handler , jump=\global \let \pgf@plotstreampoint \pgf@plot@line@handler@move }\begingroup \escapechar =-1 \edef \pgfplotsplothandlername {\string \pgfplothandlerlineto }\pgfmath@smuggleone \pgfplotsplothandlername \endgroup \def \pgfplotsplothandlerLUAfactory {function(axis, pointmetainputhandler) return pgfplots.GenericPlothandler.new("\pgfplotsplothandlername ", axis,pointmetainputhandler) end}\def \pgfplotsplothandlerLUAvisualizerfactory {pgfplots.defaultPlotVisualizerFactory}}\pgfkeysdef {/pgfplots/legend image code}{\draw [/pgfplots/mesh=false,bar width=3pt,bar shift=0pt,mark repeat=2,mark phase=2,] plot coordinates { (0cm,0cm) (0.3cm,0cm) (0.6cm,0cm)};}\pgfkeysdef {/pgfplots/every legend image post}{}\pgfkeyssetvalue {/pgfplots/mark list fill}{.!80!black}\pgfkeysdef {/pgfplots/every crossref picture}{\pgfkeysalso {baseline,yshift=0.3em}}\pgfplots@show@small@legendplots {mark={none},cyan={\pgfkeysnovalue }}{}}\ifpgfpicture \scope [/pgfplots/every crossref picture]\pgfplots@draw@image \endscope \else \expandafter \ifx \csname tikzappendtofigurename\endcsname \relax \else \begingroup \tikzappendtofigurename {_crossref}\fi \tikz [/pgfplots/every crossref picture]{\pgfplots@draw@image }\expandafter \ifx \csname tikzappendtofigurename\endcsname \relax \else \endgroup \fi \fi \endgroup }}\dpthimport 
 \def \dpthimport {\newlabel {i_hosp_new}{{\expandafter \protect \csname pgfplots@show@ref@i_hosp_new\endcsname }{\thepage }{Impact of budgets on the coverage set}{pgfplotslink.4.0}{}}}\dpthimport 
@@ -244,6 +246,7 @@
 \bibcite{torneri2021controlling}{{27}{2021}{{Torneri et~al.}}{{Torneri, Willem, Colizza, Kremer, Meuris, Darcis, Hens, and Libin}}}
 \bibcite{torneri2020prospect}{{28}{2020}{{Torneri et~al.}}{{Torneri, Libin, Vanderlocht, Vandamme, Neyts, and Hens}}}
 \bibcite{libin2021assessing}{{29}{2021{b}}{{Libin et~al.}}{{Libin, Willem, Verstraeten, Torneri, Vanderlocht, and Hens}}}
+\bibcite{parisi2017manifold}{{30}{2017}{{Parisi et~al.}}{{Parisi, Pirotta, and Peters}}}
 \citation{abrams2021modelling}
 \citation{bailey1975mathematical}
 \citation{abrams2021modelling}
@@ -256,6 +259,7 @@
 \citation{abrams2021modelling}
 \citation{abrams2021modelling}
 \citation{abrams2021modelling}
+\citation{parisi2017manifold}
 \@writefile{toc}{\contentsline {subsection}{\numberline {A.1}A Note on Model Parameters}{20}{subsection.A.1}\protected@file@percent }
 \newlabel{sec:compartment-model-parameters}{{A.1}{20}{A Note on Model Parameters}{subsection.A.1}{}}
 \newlabel{sec:compartment-model-parameters@cref}{{[subappendix][1][2147483647,1]A.1}{[1][19][]20}}
@@ -269,22 +273,31 @@
 \@writefile{toc}{\contentsline {subsection}{\numberline {B.2}Comparison of coverage sets learned on $\mathbf  {R}_{\text  {ARH}}$ and $\mathbf  {R}_{\text  {ARI}}$}{20}{subsection.B.2}\protected@file@percent }
 \newlabel{sec:cs-arh-vs-ari}{{B.2}{20}{Comparison of coverage sets learned on $\mathbf {R}_{\text {ARH}}$ and $\mathbf {R}_{\text {ARI}}$}{subsection.B.2}{}}
 \newlabel{sec:cs-arh-vs-ari@cref}{{[subappendix][2][2147483647,2]B.2}{[1][20][]20}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {B.3}Experiment parameters}{20}{subsection.B.3}\protected@file@percent }
-\newlabel{sec:pcn-hyperparameters}{{B.3}{20}{Experiment parameters}{subsection.B.3}{}}
-\newlabel{sec:pcn-hyperparameters@cref}{{[subappendix][3][2147483647,2]B.3}{[1][20][]20}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {B.3}Comparison of PCN with a dynamic baseline}{20}{subsection.B.3}\protected@file@percent }
+\newlabel{sec:cs-pcn-vs-mones}{{B.3}{20}{Comparison of PCN with a dynamic baseline}{subsection.B.3}{}}
+\newlabel{sec:cs-pcn-vs-mones@cref}{{[subappendix][3][2147483647,2]B.3}{[1][20][]20}}
 \@writefile{lof}{\contentsline {figure}{\numberline {B.1}{\ignorespaces Comparison of learned coverage sets when PCN interacts with the ODE (i.e., deterministic) variant of the compartment model. We observe that, regardless of the chosen budget, PCN learns a similar coverage set on both variants of the model, indicating that it is able to cope with the stochasticity present in the Binomial variant.\relax }}{21}{figure.caption.14}\protected@file@percent }
 \newlabel{fig:pf-binomial-ode}{{B.1}{21}{Comparison of learned coverage sets when PCN interacts with the ODE (i.e., deterministic) variant of the compartment model. We observe that, regardless of the chosen budget, PCN learns a similar coverage set on both variants of the model, indicating that it is able to cope with the stochasticity present in the Binomial variant.\relax }{figure.caption.14}{}}
 \newlabel{fig:pf-binomial-ode@cref}{{[figure][1][2147483647,2]B.1}{[1][20][]21}}
 \@writefile{lof}{\contentsline {figure}{\numberline {B.2}{\ignorespaces Comparison of learned coverage sets when PCN learns using the attack rate of infections $\mathbf  {R}_{\text  {ARI}}$.\relax }}{22}{figure.caption.15}\protected@file@percent }
 \newlabel{fig:pf-binomial-arh-ari}{{B.2}{22}{Comparison of learned coverage sets when PCN learns using the attack rate of infections $\mathbf {R}_{\text {ARI}}$.\relax }{figure.caption.15}{}}
 \newlabel{fig:pf-binomial-arh-ari@cref}{{[figure][2][2147483647,2]B.2}{[1][20][]22}}
-\@writefile{lot}{\contentsline {table}{\numberline {B.1}{\ignorespaces The different hyper-parameters used by our extension of PCN. The right-most column also shows, when applicable, the different values tried during grid-search.\relax }}{23}{table.caption.16}\protected@file@percent }
-\newlabel{tab:pcn-hyperparameters}{{B.1}{23}{The different hyper-parameters used by our extension of PCN. The right-most column also shows, when applicable, the different values tried during grid-search.\relax }{table.caption.16}{}}
-\newlabel{tab:pcn-hyperparameters@cref}{{[table][1][2147483647,2]B.1}{[1][20][]23}}
-\@writefile{lot}{\contentsline {table}{\numberline {B.2}{\ignorespaces The 4 different neural network architectures explored for our experiments. All the displayed results use the \texttt  {dense-big} variant.\relax }}{23}{table.caption.17}\protected@file@percent }
-\newlabel{tab:nn-architecture}{{B.2}{23}{The 4 different neural network architectures explored for our experiments. All the displayed results use the \texttt {dense-big} variant.\relax }{table.caption.17}{}}
-\newlabel{tab:nn-architecture@cref}{{[table][2][2147483647,2]B.2}{[1][20][]23}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {B.4}Neural network architecture}{23}{subsection.B.4}\protected@file@percent }
-\newlabel{sec:pcn-architecture}{{B.4}{23}{Neural network architecture}{subsection.B.4}{}}
-\newlabel{sec:pcn-architecture@cref}{{[subappendix][4][2147483647,2]B.4}{[1][20][]23}}
-\gdef \@abspage@last{23}
+\@writefile{lot}{\contentsline {table}{\numberline {B.1}{\ignorespaces The different hyper-parameters used by our extension of PCN. The right-most column also shows, when applicable, the different values tried during grid-search.\relax }}{23}{table.caption.18}\protected@file@percent }
+\newlabel{tab:pcn-hyperparameters}{{B.1}{23}{The different hyper-parameters used by our extension of PCN. The right-most column also shows, when applicable, the different values tried during grid-search.\relax }{table.caption.18}{}}
+\newlabel{tab:pcn-hyperparameters@cref}{{[table][1][2147483647,2]B.1}{[1][23][]23}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {B.4}Experiment parameters}{23}{subsection.B.4}\protected@file@percent }
+\newlabel{sec:pcn-hyperparameters}{{B.4}{23}{Experiment parameters}{subsection.B.4}{}}
+\newlabel{sec:pcn-hyperparameters@cref}{{[subappendix][4][2147483647,2]B.4}{[1][23][]23}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {B.5}Neural network architecture}{23}{subsection.B.5}\protected@file@percent }
+\newlabel{sec:pcn-architecture}{{B.5}{23}{Neural network architecture}{subsection.B.5}{}}
+\newlabel{sec:pcn-architecture@cref}{{[subappendix][5][2147483647,2]B.5}{[1][23][]23}}
+\@writefile{lof}{\contentsline {figure}{\numberline {B.3}{\ignorespaces Comparison of PCN and MONES on the Binomial environment\relax }}{24}{figure.caption.16}\protected@file@percent }
+\newlabel{fig:pf-binomial-pcn-mones}{{B.3}{24}{Comparison of PCN and MONES on the Binomial environment\relax }{figure.caption.16}{}}
+\newlabel{fig:pf-binomial-pcn-mones@cref}{{[figure][3][2147483647,2]B.3}{[1][23][]24}}
+\@writefile{lof}{\contentsline {figure}{\numberline {B.4}{\ignorespaces Comparison of PCN and MONES on the ODE environment\relax }}{25}{figure.caption.17}\protected@file@percent }
+\newlabel{fig:pf-ode-pcn-mones}{{B.4}{25}{Comparison of PCN and MONES on the ODE environment\relax }{figure.caption.17}{}}
+\newlabel{fig:pf-ode-pcn-mones@cref}{{[figure][4][2147483647,2]B.4}{[1][23][]25}}
+\@writefile{lot}{\contentsline {table}{\numberline {B.2}{\ignorespaces The 4 different neural network architectures explored for our experiments. All the displayed results use the \texttt  {dense-big} variant.\relax }}{26}{table.caption.19}\protected@file@percent }
+\newlabel{tab:nn-architecture}{{B.2}{26}{The 4 different neural network architectures explored for our experiments. All the displayed results use the \texttt {dense-big} variant.\relax }{table.caption.19}{}}
+\newlabel{tab:nn-architecture@cref}{{[table][2][2147483647,2]B.2}{[1][23][]26}}
+\gdef \@abspage@last{26}

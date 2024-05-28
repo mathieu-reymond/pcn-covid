@@ -631,6 +631,7 @@ Interestingly, we notice that the most restrictive policy (i.e., the one that pr
 Finally, the top plot shows that, without imposing social restrictions, the number of hospitalisations peaks on the 15th of June. By the beginning of July, the epidemic has spread out over the majority of the population \todo{epi friends: can we mention here that we reached herd immunity?}, and the number of admissions at the hospital has been reduced to a fraction of the number of hospitalisations at the peak. Thus, without social restrictions, we do not take advantage of the natural decrease of social contacts due to school holidays, as a significant proportion of the population has already been infected before the start of the holidays.
 
 \subsection{Impact of budgets on the coverage set}
+\label{sec:pf-binomial-arh-budgets}
 
 \begin{figure}
     \centering
@@ -829,6 +830,29 @@ Results are shown in Fig.~\ref{fig:pf-binomial-arh-ari}. We observe that the lea
     \input{fig/arh_binomial_ari}
     \caption{Comparison of learned coverage sets when PCN learns using the attack rate of infections $\mathbf{R}_{\text{ARI}}$.}
     \label{fig:pf-binomial-arh-ari}
+\end{figure}
+
+\subsection{Comparison of PCN with a dynamic baseline}
+\label{sec:cs-pcn-vs-mones}
+
+In this work, we focus on the application of multi-objective reinforcement learning for epidemic outbreaks. As a reference, we use fixed policies to show that the dynamic policies we learn are able to properly adapt to the evolution of the epidemic. We extend PCN towards this application, and assess the quality of the learned policies (see Fig.~\ref{fig:policy-execution},\ref{fig:pe-binomial-arh-budgets}). Nonetheless, the theoretical Pareto front of optimal policies is unknown. To confirm the quality of the policies learned by PCN, we compare it to  Multi-Objective Natural Evolution Strategies (MONES)~\cite{parisi2017manifold}, a dynamic baseline which also learns a coverage set of policies, and makes no assumptions on the shape of the Pareto front.
+
+Given a parametrized policy, MONES learns a distribution over the policy parameters such that sampling from this distribution produces a Pareto-efficient policy. Each sample produces a different policy, leading to a different non-dominated return. This poses the advantage that we can sample infinitely many different policies. However, as a drawback, we do not know the return the sampled policy will achieve without executing it first. Another considerable drawback is that MONES computes the Fisher information matrix, which is squared in the number of policy-parameters. Due to the size of \momdpname's state-space and, consequently, the size of the neural network that represents the policy, it becomes a considerable challenge to compute this matrix. To avoid this matrix to be intractable, we had to make assumptions on the space of policy-parameters, i.e., zero-correlation between parameters.
+
+We train MONES on both the Binomial and ODE version of \momdpname, for which the results can be seen on Fig.~\ref{fig:pf-binomial-pcn-mones},~\ref{fig:pf-ode-pcn-mones}, respectively. In both cases, MONES outperforms the fixed baseline, especially in the less restrictive policies in terms of social burden. However, PCN systematically learns policies that dominate the ones learned by MONES. Moreover, as explained in Sec.~\ref{sec:pf-binomial-arh-budgets}, given a higher budget, PCN learns increasingly better policies. This seems to be less the case for MONES.On the Binomial environment, the difference in budget barely impacts the learned policies. On the ODE environment, this difference is only visible on a limited region of the coverage set. Thus, MONES makes a suboptimal use of its budget. This confirms that anticipating the evolution of the epidemic to make best use of the leftover budget is a challenging problem, for which the use of adequate MORL techniques could greatly benefit decision-makers.
+
+\begin{figure}[t!]
+    \centering
+    \input{fig/arh_binomial_mones}
+    \caption{Comparison of PCN and MONES on the Binomial environment}
+    \label{fig:pf-binomial-pcn-mones}
+\end{figure}
+
+\begin{figure}[t!]
+    \centering
+    \input{fig/arh_ode_mones}
+    \caption{Comparison of PCN and MONES on the ODE environment}
+    \label{fig:pf-ode-pcn-mones}
 \end{figure}
 
 \subsection{Experiment parameters}

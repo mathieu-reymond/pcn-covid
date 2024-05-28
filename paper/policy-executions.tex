@@ -1,0 +1,87 @@
+\documentclass{article}
+
+\usepackage{arxiv}
+
+\usepackage[utf8]{inputenc} % allow utf-8 input
+\usepackage[T1]{fontenc}    % use 8-bit T1 fonts
+\usepackage{hyperref}       % hyperlinks
+\usepackage{url}            % simple URL typesetting
+\usepackage{booktabs}       % professional-quality tables
+\usepackage{amsmath,bm}
+\usepackage{amsfonts}       % blackboard math symbols
+\usepackage{nicefrac}       % compact symbols for 1/2, etc.
+\usepackage{microtype}      % microtypography
+\usepackage{cleveref}       % smart cross-referencing
+\usepackage{graphicx}
+\usepackage{natbib}
+\usepackage{doi}
+\usepackage{bm}             % bold fonts for math symbols
+\usepackage[misc]{ifsym}    % collection of symbols
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{float}          % force figure positioning in text
+\usepackage{chngcntr}       % counters per section
+\usepackage{tikz}
+\usepackage{pgfplots,etoolbox}
+\usepackage{comment}
+\usetikzlibrary{external}
+\usepgfplotslibrary{dateplot, groupplots, fillbetween}
+\pgfplotsset{compat=newest}
+\tikzexternalize[prefix=cache-policies/]
+
+\newcommand{\momdpname}{MOBelCov}
+
+\usepackage{plotpolicies}   % custom package to plot policy-executions
+
+\pagestyle{empty}
+\begin{document}
+\section{Policy executions}
+
+Depending on the budget, PCN learns a coverage set containing more than 150 different policies. To gain a better insight about their behavior, and how they differ from each other, we plot executions of each learned policy in Fig.~\ref{fig:policy-executions-b2-0}-\ref{fig:policy-executions-b2-140}. The plots are displayed from the least restrictive policy in terms of social burden to the most restrictive one. Since the \momdpname\ model is stochastic, we show 10 executions of the same policy, on each plot.
+
+\foreach \i/\j in {0/19, 20/39, 40/59, 60/79, 80/99, 100/119, 120/139, 140/153}{
+    \begin{figure}
+        \centering
+        \plotPolicies{\i}{\j}{2}
+        \caption{Execution of policies \i\ to \j, with a budget of 2.}
+        \label{fig:policy-executions-b2-\i}
+    \end{figure}
+}
+
+\foreach \i/\j in {0/19, 20/39, 40/59, 60/79, 80/99, 100/119, 120/139, 140/159, 160/160}{
+    \begin{figure}
+        \centering
+        \plotPolicies{\i}{\j}{3}
+        \caption{Execution of policies \i\ to \j, with a budget of 3.}
+        \label{fig:policy-executions-b3-\i}
+    \end{figure}
+}
+
+\foreach \i/\j in {0/19, 20/39, 40/59, 60/79, 80/93}{
+    \begin{figure}
+        \centering
+        \plotPolicies{\i}{\j}{4}
+        \caption{Execution of policies \i\ to \j, with a budget of 4.}
+        \label{fig:policy-executions-b4-\i}
+    \end{figure}
+}
+
+\foreach \i/\j in {0/19, 20/39, 40/59, 60/79, 80/99, 100/114}{
+    \begin{figure}
+        \centering
+        \plotPolicies{\i}{\j}{5}
+        \caption{Execution of policies \i\ to \j, with a budget of 5.}
+        \label{fig:policy-executions-b5-\i}
+    \end{figure}
+}
+
+\foreach \i/\j in {0/19, 20/39, 40/59, 60/79, 80/99, 100/116}{
+    \begin{figure}
+        \centering
+        \plotPolicies{\i}{\j}{None}
+        \caption{Execution of policies \i\ to \j, with no budget restriction ($b=\infty$).}
+        \label{fig:policy-executions-binf-\i}
+    \end{figure}
+}
+
+\end{document}
