@@ -254,9 +254,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='PCN')
     parser.add_argument('--objectives', default=[1, 5], type=int, nargs='+', help='index for ari, arh, pw, ps, pl, ptot')
     parser.add_argument('--env', default='ode', type=str, help='ode or binomial')
-    parser.add_argument('--action', default='discrete', type=str, help='discrete, multidiscrete or continuous')
+    parser.add_argument('--action', default='continuous', type=str, help='discrete, multidiscrete or continuous')
     parser.add_argument('--lr', default=1e-3, type=float, help='learning rate')
-    parser.add_argument('--steps', default=3e5, type=float, help='total timesteps')
+    parser.add_argument('--steps', default=5e5, type=float, help='total timesteps')
     parser.add_argument('--batch', default=256, type=int, help='batch size')
     parser.add_argument('--model-updates', default=50, type=int,
         help='number of times the model is updated at every training iteration')
@@ -265,12 +265,12 @@ if __name__ == '__main__':
               Initially fill ER with n random episodes')
     parser.add_argument('--n-episodes', default=10, type=int,
         help='number of episodes to run between each training iteration')
-    parser.add_argument('--er-size', default=400, type=int,
+    parser.add_argument('--er-size', default=1000, type=int,
         help='max size (in episodes) of the ER buffer')
     parser.add_argument('--threshold', default=0.02, type=float, help='crowding distance threshold before penalty')
-    parser.add_argument('--noise', default=0.0, type=float, help='noise applied on target-return on batch-update')
-    parser.add_argument('--model', default='conv1dsmall', type=str, help='conv1d(big|small), dense(big|small)')
-    parser.add_argument('--clip_grad_norm', default=None, type=float, help='clip gradient norm during pcn update')
+    parser.add_argument('--noise', default=0.05, type=float, help='noise applied on target-return on batch-update')
+    parser.add_argument('--model', default='densebig_silu', type=str, help='conv1d(big|small), dense(big|small)')
+    parser.add_argument('--clip_grad_norm', default=5, type=float, help='clip gradient norm during pcn update')
     parser.add_argument('--budget', default=None, type=int, help='number of times each action is allowed to change')
     args = parser.parse_args()
     print(args)
@@ -280,7 +280,7 @@ if __name__ == '__main__':
     env_type = 'ODE' if args.env == 'ode' else 'Binomial'
     n_evaluations = 1 if env_type == 'ODE' else 10
     budget = f'Budget{args.budget}' if args.budget is not None else ''
-    scale = np.array([800000, 11000, 50., 20, 50, 120])
+    scale = np.array([800000, 10000, 50., 20, 50, 90])
     ref_point = np.array([-15000000, -200000, -1000.0, -1000.0, -1000.0, -1000.0])/scale
     scaling_factor = torch.tensor([[1, 1, 1, 1, 1, 1, 0.1]]).to(device)
     max_return = np.array([0, 0, 0, 0, 0, 0])/scale
