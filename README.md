@@ -1,14 +1,10 @@
  # Using Pareto Conditioned Networks for COVID exit strategies
 
-This repo uses the gym_covid compartment model to learn exit strategies of the first COVID wave that occured in Belgium.
+This repo uses the gym environment (https://github.com/plibin/gym-covid) that encapsulates the stochastic compartment model by Abrams et al. (2021), to learn exit strategies of the first COVID wave that occurred in Belgium.
 
-Changes compared to the original PCN:
- - added MultiDiscrete and Continuous actions
- - added optional noise to the target-returns for more robust policies
-   > TODO smarter way to deal with stochastic envs
- - tiny change in the __dominating score__ metric
-   > TODO make this robust to many envs
-
+If you use this model, please cite these works:
+- [Abrams, S., Wambua, J., Santermans, E., Willem, L., Kuylen, E., Coletti, P., Libin, P., Faes, C., Petrof, O., Herzog, S., Beutels P., Hens, N. (2021). Modelling the early phase of the Belgian COVID-19 epidemic using a stochastic compartmental model and studying its implied future trajectories. Epidemics, 35, 100449.](https://www.sciencedirect.com/science/article/pii/S1755436521000116?via%3Dihub)
+- [Reymond, M., Hayes, C. F., Willem, L., Rădulescu, R., Abrams, S., Roijers, D., Howley, E., Mannion, P., Hens, N., Nowé, A., Libin, P. (2024). Exploring the pareto front of multi-objective covid-19 mitigation policies using reinforcement learning. Expert Systems with Applications, 249, 123686.](https://www.sciencedirect.com/science/article/pii/S0957417424005529)
 
 ## How to train
 
@@ -34,28 +30,4 @@ python experiment_plots.py <path-to-logdir>
 You can also evaluate a checkpoint using:
 ```
 python eval_pcn.py <env-type> <path-to-logdir> --interactive
-```
-
-### saved model
-
-There is a saved model in the `runs/` directory. It also contains the coverage set and hypervolume:
-
-![the coverage set](runs/commit_4c805a2e2cffcfeaf853f91a80c872b2f4288e65/env_binomial/action_continuous/lr_0.001/steps_300000.0/batch_256/model_updates_50/top_episodes_200/n_episodes_10/er_size_500/threshold_0.02/noise_0.1/model_conv1d/2022-02-28_12-12-38_66aa/plots/pf.png)
-
-![the hypervolume](runs/commit_4c805a2e2cffcfeaf853f91a80c872b2f4288e65/env_binomial/action_continuous/lr_0.001/steps_300000.0/batch_256/model_updates_50/top_episodes_200/n_episodes_10/er_size_500/threshold_0.02/noise_0.1/model_conv1d/2022-02-28_12-12-38_66aa/plots/hv.png)
-
-Have a look at the executed policies in
-```
-runs/commit_4c805a2e2cffcfeaf853f91a80c872b2f4288e65/env_binomial/action_continuous/lr_0.001/steps_300000.0/batch_256/model_updates_50/top_episodes_200/n_episodes_10/er_size_500/threshold_0.02/noise_0.1/model_conv1d/2022-02-28_12-12-38_66aa/policy-executions/
-```
-
-<figure class="video_container">
-  <video controls="true" allowfullscreen="true" poster="runs/commit_4c805a2e2cffcfeaf853f91a80c872b2f4288e65/env_binomial/action_continuous/lr_0.001/steps_300000.0/batch_256/model_updates_50/top_episodes_200/n_episodes_10/er_size_500/threshold_0.02/noise_0.1/model_conv1d/2022-02-28_12-12-38_66aa/policy-executions/policy_0.png">
-    <source src="runs/commit_4c805a2e2cffcfeaf853f91a80c872b2f4288e65/env_binomial/action_continuous/lr_0.001/steps_300000.0/batch_256/model_updates_50/top_episodes_200/n_episodes_10/er_size_500/threshold_0.02/noise_0.1/model_conv1d/2022-02-28_12-12-38_66aa/policy-executions/all_policies.mp4" type="video/mp4">
-  </video>
-</figure>
-
-Or try out the policies directly using:
-```
-python eval_pcn.py binomial runs/commit_4c805a2e2cffcfeaf853f91a80c872b2f4288e65/env_binomial/action_continuous/lr_0.001/steps_300000.0/batch_256/model_updates_50/top_episodes_200/n_episodes_10/er_size_500/threshold_0.02/noise_0.1/model_conv1d/2022-02-28_12-12-38_66aa/ --n 10 --interactive
 ```
