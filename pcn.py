@@ -187,7 +187,9 @@ def run_episode(env, model, desired_return, desired_horizon, max_return, eval=Fa
     done = False
     while not done:
         action = choose_action(model, obs, desired_return, desired_horizon, eval=eval)
-        n_obs, reward, done, _ = env.step(action)
+        n_obs, reward, done, info = env.step(action)
+        if 'action' in info:
+            action = info['action']
 
         transitions.append(Transition(
             observation=obs,
@@ -322,7 +324,9 @@ def train(env,
         done = False
         while not done:
             action = env.action_space.sample()
-            n_obs, reward, done, _ = env.step(action)
+            n_obs, reward, done, info = env.step(action)
+            if 'action' in info:
+                action = info['action']
             transitions.append(Transition(obs, action, np.float32(reward).copy(), n_obs, done))
             obs = n_obs
             step += 1

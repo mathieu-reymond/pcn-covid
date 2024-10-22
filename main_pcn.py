@@ -4,6 +4,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import cv2
 import numpy as np
+import copy
 import wandb
 
 
@@ -33,18 +34,27 @@ class TodayWrapper(gym.Wrapper):
 
     def reset(self):
         s = super(TodayWrapper, self).reset()
-        ss, se, sa = s
-        return (ss[-1].T, se[-1], sa)
+        if len(s) == 4:
+            sb, ss, se, sa = s
+            return (sb, ss[-1].T, se[-1], sa)
+        else:
+            ss, se, sa = s
+            return (ss[-1].T, se[-1], sa)
     # step function of covid env returns simulation results of every day of timestep
     # only keep current day
     # also discard first reward
     def step(self, action):
         s, r, d, i = super(TodayWrapper, self).step(action)
-        ss, se, sa = s
         # sum all the social burden objectives together:
         p_tot = r[2:].sum()
         r = np.concatenate((r, p_tot[None]))
-        return (ss[-1].T, se[-1], sa), r, d, i
+        if len(s) == 4:
+            sb, ss, se, sa = s
+            s = (sb, ss[-1].T, se[-1], sa)
+        else:
+            ss, se, sa = s
+            s = (ss[-1].T, se[-1], sa)
+        return s, r, d, i
 
 
 class HistoryEnv(gym.Wrapper):
@@ -140,7 +150,8 @@ class CovidModel(nn.Module):
                  objectives,
                  ss_emb,
                  se_emb,
-                 sa_emb):
+                 sa_emb,
+                 with_budget=False):
         super(CovidModel, self).__init__()
 
         self.scaling_factor = scaling_factor[:,objectives + (len(scaling_factor)-1,)]
@@ -148,6 +159,13 @@ class CovidModel(nn.Module):
         self.ss_emb = ss_emb
         self.se_emb = se_emb
         self.sa_emb = sa_emb
+        if with_budget:
+            # sa_emb has 3 inputs (1 per action), same as budget (1 budget per action)
+            self.sb_emb = copy.deepcopy(sa_emb)
+        else:
+            # otherwise, we include the number of steps left (single int),
+            # se_emb takes a single input as well
+            self.sb_emb = copy.deepcopy(se_emb)
         self.s_emb = nn.Sequential(
             nn.Linear(64, 64),
             nn.SiLU()
@@ -164,11 +182,15 @@ class CovidModel(nn.Module):
         c = torch.cat((desired_return, desired_horizon), dim=-1)
         # commands are scaled by a fixed factor
         c = c*self.scaling_factor
-        ss, se, sa = state
+        # if self.sb_emb is not None:
+        sb, ss, se, sa = state
+        s = self.ss_emb(ss.float())*self.se_emb(se.float())*self.sa_emb(sa.float())*self.sb_emb(sb.float())
+        # else:
+        #     ss, se, sa = state
+        #     s = self.ss_emb(ss.float())*self.se_emb(se.float())*self.sa_emb(sa.float())
         # concatenate embeddings
         # s = torch.cat((self.ss_emb(ss.float()), self.se_emb(se.float()), self.sa_emb(sa.float())), 1)
         # hadamard product on embeddings
-        s = self.ss_emb(ss.float())*self.se_emb(se.float())*self.sa_emb(sa.float())
         s = self.s_emb(s)
         c = self.c_emb(c)
         # element-wise multiplication of state-embedding and command
@@ -232,9 +254,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='PCN')
     parser.add_argument('--objectives', default=[1, 5], type=int, nargs='+', help='index for ari, arh, pw, ps, pl, ptot')
     parser.add_argument('--env', default='ode', type=str, help='ode or binomial')
-    parser.add_argument('--action', default='discrete', type=str, help='discrete, multidiscrete or continuous')
+    parser.add_argument('--action', default='continuous', type=str, help='discrete, multidiscrete or continuous')
     parser.add_argument('--lr', default=1e-3, type=float, help='learning rate')
-    parser.add_argument('--steps', default=3e5, type=float, help='total timesteps')
+    parser.add_argument('--steps', default=5e5, type=float, help='total timesteps')
     parser.add_argument('--batch', default=256, type=int, help='batch size')
     parser.add_argument('--model-updates', default=50, type=int,
         help='number of times the model is updated at every training iteration')
@@ -243,12 +265,13 @@ if __name__ == '__main__':
               Initially fill ER with n random episodes')
     parser.add_argument('--n-episodes', default=10, type=int,
         help='number of episodes to run between each training iteration')
-    parser.add_argument('--er-size', default=400, type=int,
+    parser.add_argument('--er-size', default=1000, type=int,
         help='max size (in episodes) of the ER buffer')
     parser.add_argument('--threshold', default=0.02, type=float, help='crowding distance threshold before penalty')
-    parser.add_argument('--noise', default=0.0, type=float, help='noise applied on target-return on batch-update')
-    parser.add_argument('--model', default='conv1dsmall', type=str, help='conv1d(big|small), dense(big|small)')
-    parser.add_argument('--clip_grad_norm', default=None, type=float, help='clip gradient norm during pcn update')
+    parser.add_argument('--noise', default=0.05, type=float, help='noise applied on target-return on batch-update')
+    parser.add_argument('--model', default='densebig_silu', type=str, help='conv1d(big|small), dense(big|small)')
+    parser.add_argument('--clip_grad_norm', default=5, type=float, help='clip gradient norm during pcn update')
+    parser.add_argument('--budget', default=None, type=int, help='number of times each action is allowed to change')
     args = parser.parse_args()
     print(args)
 
@@ -256,7 +279,8 @@ if __name__ == '__main__':
 
     env_type = 'ODE' if args.env == 'ode' else 'Binomial'
     n_evaluations = 1 if env_type == 'ODE' else 10
-    scale = np.array([800000, 11000, 50., 20, 50, 120])
+    budget = f'Budget{args.budget}' if args.budget is not None else ''
+    scale = np.array([800000, 10000, 50., 20, 50, 90])
     ref_point = np.array([-15000000, -200000, -1000.0, -1000.0, -1000.0, -1000.0])/scale
     scaling_factor = torch.tensor([[1, 1, 1, 1, 1, 1, 0.1]]).to(device)
     max_return = np.array([0, 0, 0, 0, 0, 0])/scale
@@ -267,7 +291,7 @@ if __name__ == '__main__':
         env = gym.make(f'BECovidWithLockdown{env_type}Discrete-v0')
         nA = env.action_space.n
     else:
-        env = gym.make(f'BECovidWithLockdown{env_type}Continuous-v0')
+        env = gym.make(f'BECovidWithLockdown{env_type}{budget}Continuous-v0')
         if args.action == 'multidiscrete':
             env = multidiscrete_env(env)
             nA = env.action_space.nvec.sum()
@@ -289,7 +313,8 @@ if __name__ == '__main__':
         ss, se, sa = ss_emb['small'], se_emb['small'], sa_emb['small']
     else:
         raise ValueError(f'unknown model type: {args.model}')
-    model = CovidModel(nA, scaling_factor, tuple(args.objectives), ss, se, sa).to(device)
+    with_budget = args.budget is not None
+    model = CovidModel(nA, scaling_factor, tuple(args.objectives), ss, se, sa, with_budget=with_budget).to(device)
 
     if args.action == 'discrete':
         model = DiscreteHead(model)
